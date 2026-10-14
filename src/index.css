@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Tell Tailwind to scan the library so its classes are always generated. */
+@source "./library";
