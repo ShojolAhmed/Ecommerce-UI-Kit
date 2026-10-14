@@ -1,0 +1,3 @@
+/* Library stylesheet entry. Import after `@import "tailwindcss"`. */
+@import "./theme.css";
+@import "./base.css";

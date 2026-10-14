@@ -1,0 +1,19 @@
+/* Minimal global defaults so semantic tokens apply everywhere. */
+@layer base {
+  /* Bare `border` utilities pick up the themed border color. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}

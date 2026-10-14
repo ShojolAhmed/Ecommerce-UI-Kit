@@ -1,16 +1,54 @@
+import { useEffect, useState } from 'react'
+import { Button, Container } from '../library/index.js'
 import { families } from './registry.jsx'
+
+const themes = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+]
+
+/** Preview-only: the library itself just reads `data-theme` on <html>. */
+function ThemeSwitcher() {
+  const [theme, setTheme] = useState('system')
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === 'system') root.removeAttribute('data-theme')
+    else root.setAttribute('data-theme', theme)
+  }, [theme])
+
+  return (
+    <div role="group" aria-label="Theme" className="flex gap-1">
+      {themes.map(({ id, label }) => (
+        <Button
+          key={id}
+          size="sm"
+          variant={theme === id ? 'primary' : 'outline'}
+          aria-pressed={theme === id}
+          onClick={() => setTheme(id)}
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
+  )
+}
 
 export default function PreviewPage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-6">
-          <h1 className="text-2xl font-bold">Ecom UI Kit</h1>
-          <p className="text-sm text-slate-500">Component preview</p>
-        </div>
+    <div className="min-h-screen">
+      <header className="border-b border-border bg-surface">
+        <Container className="flex flex-wrap items-center justify-between gap-4 py-6">
+          <div>
+            <h1 className="text-2xl font-bold">Ecom UI Kit</h1>
+            <p className="text-sm text-foreground-muted">Component preview</p>
+          </div>
+          <ThemeSwitcher />
+        </Container>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-12 px-4 py-8">
+      <Container as="main" className="space-y-12 py-8">
         {families.map((family) => (
           <section key={family.id} aria-labelledby={family.id}>
             <h2 id={family.id} className="mb-6 text-xl font-semibold">
@@ -19,7 +57,7 @@ export default function PreviewPage() {
             <div className="space-y-8">
               {family.variants.map((variant) => (
                 <div key={variant}>
-                  <p className="mb-3 inline-block rounded bg-slate-200 px-2 py-0.5 font-mono text-xs">
+                  <p className="mb-3 inline-block rounded bg-surface-sunken px-2 py-0.5 font-mono text-xs">
                     variant: {variant}
                   </p>
                   {family.render(variant)}
@@ -28,7 +66,7 @@ export default function PreviewPage() {
             </div>
           </section>
         ))}
-      </main>
+      </Container>
     </div>
   )
 }
