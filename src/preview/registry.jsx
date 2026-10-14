@@ -1,6 +1,7 @@
 import {
   ProductCard,
   productCardVariants,
+  navbarVariants,
   Button,
   buttonVariants,
   IconButton,
@@ -12,6 +13,7 @@ import {
   containerSizes,
 } from '../library/index.js'
 import { sampleProducts } from './sampleData.js'
+import NavbarDemo from './navbar/NavbarDemo.jsx'
 import TokenShowcase from './foundation/TokenShowcase.jsx'
 import Row from './foundation/Row.jsx'
 import { tokenSections } from './foundation/tokenSections.js'
@@ -128,6 +130,12 @@ export const families = [
         </Container>
       </div>
     ),
+  },
+  {
+    id: 'navbar',
+    name: 'Navbar',
+    variants: Object.keys(navbarVariants),
+    render: (variant) => <NavbarDemo variant={variant} />,
   },
   {
     id: 'product-card',

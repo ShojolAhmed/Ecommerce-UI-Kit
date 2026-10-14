@@ -307,4 +307,23 @@
   /* Motion */
   --default-transition-duration: 150ms;
   --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Motion: panels that slide in from an edge (use with `motion-safe:`) */
+  --animate-ui-slide-left: ui-slide-left 200ms ease-out;
+  --animate-ui-slide-right: ui-slide-right 200ms ease-out;
+  --animate-ui-slide-up: ui-slide-up 220ms ease-out;
+  --animate-ui-fade-in: ui-fade-in 150ms ease-out;
+
+  @keyframes ui-slide-left {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes ui-slide-right {
+    from { transform: translateX(100%); }
+  }
+  @keyframes ui-slide-up {
+    from { transform: translateY(100%); }
+  }
+  @keyframes ui-fade-in {
+    from { opacity: 0; }
+  }
 }
