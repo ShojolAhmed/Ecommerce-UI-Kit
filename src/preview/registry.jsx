@@ -1,6 +1,7 @@
 import {
   productCardVariants,
   navbarVariants,
+  footerVariants,
   sidebarVariants,
   Button,
   buttonVariants,
@@ -24,6 +25,17 @@ import {
   SearchInputDemo,
   SortDropdownDemo,
 } from './discovery/ControlsDemos.jsx'
+import {
+  AnnouncementBarDemo,
+  CategoryGridDemo,
+  FaqDemo,
+  FeaturedProductsDemo,
+  FooterDemo,
+  HeroBannerDemo,
+  NewsletterSignupDemo,
+  PromoBannerDemo,
+  TestimonialsDemo,
+} from './home/SectionDemos.jsx'
 import TokenShowcase from './foundation/TokenShowcase.jsx'
 import Row from './foundation/Row.jsx'
 import { tokenSections } from './foundation/tokenSections.js'
@@ -200,5 +212,59 @@ export const families = [
     name: 'Product Discovery (all together)',
     variants: ['together'],
     render: () => <DiscoveryDemo />,
+  },
+  {
+    id: 'footer',
+    name: 'Footer',
+    variants: Object.keys(footerVariants),
+    render: (variant) => <FooterDemo variant={variant} />,
+  },
+  {
+    id: 'announcement-bar',
+    name: 'Announcement Bar',
+    variants: ['static', 'rotating', 'dismissible', 'tones'],
+    render: (mode) => <AnnouncementBarDemo mode={mode} />,
+  },
+  {
+    id: 'hero-banner',
+    name: 'Hero Banner',
+    variants: ['split', 'split-image-start', 'overlay', 'overlay-centered'],
+    render: (mode) => <HeroBannerDemo mode={mode} />,
+  },
+  {
+    id: 'featured-category-grid',
+    name: 'Featured Category Grid',
+    variants: ['grid', 'mosaic', 'three-columns'],
+    render: (mode) => <CategoryGridDemo mode={mode} />,
+  },
+  {
+    id: 'featured-products',
+    name: 'Featured Products',
+    variants: ['grid', 'grid-sale', 'carousel', 'carousel-overlay'],
+    render: (mode) => <FeaturedProductsDemo mode={mode} />,
+  },
+  {
+    id: 'promo-banner',
+    name: 'Promo Banner',
+    variants: ['split', 'split-image-start', 'strip', 'dark-strip', 'accent', 'no-code'],
+    render: (mode) => <PromoBannerDemo mode={mode} />,
+  },
+  {
+    id: 'testimonials',
+    name: 'Testimonials',
+    variants: ['grid', 'slider'],
+    render: (mode) => <TestimonialsDemo mode={mode} />,
+  },
+  {
+    id: 'faq-accordion',
+    name: 'FAQ Accordion',
+    variants: ['stacked', 'split', 'allow-multiple'],
+    render: (mode) => <FaqDemo mode={mode} />,
+  },
+  {
+    id: 'newsletter-signup',
+    name: 'Newsletter Signup',
+    variants: ['centered', 'split', 'split-image', 'dark', 'with-consent'],
+    render: (mode) => <NewsletterSignupDemo mode={mode} />,
   },
 ]

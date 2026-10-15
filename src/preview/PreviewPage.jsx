@@ -44,7 +44,12 @@ export default function PreviewPage() {
             <h1 className="text-2xl font-bold">Ecom UI Kit</h1>
             <p className="text-sm text-foreground-muted">Component preview</p>
           </div>
-          <ThemeSwitcher />
+          <div className="flex flex-wrap items-center gap-4">
+            <a href="#/home" className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Open the demo homepage
+            </a>
+            <ThemeSwitcher />
+          </div>
         </Container>
       </header>
 

@@ -1,9 +1,9 @@
 # Ecom UI Kit
 
 Reusable React e-commerce UI components with interchangeable design variants
-(navbars, product cards, sidebars, footers, …). Built with React, Vite, JavaScript and Tailwind CSS.
+(navbars, product cards, sidebars, footers, homepage sections, …). Built with React, Vite, JavaScript and Tailwind CSS.
 
-> Status: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
+> Status: **Phase 6 – footers and homepage sections.** Four `Footer` variants and eight independent homepage sections (see below), on top of the phase 5 components. Earlier: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
 
 ## Getting started
 
@@ -485,6 +485,99 @@ drawer. The sample categories, filter groups and sort options are in `src/previe
 in-memory filtering (`applyDiscovery`) is preview-only and stands in for your catalog logic. A status line under each demo
 shows the last callback and the state the page owns.
 
+## Footers and homepage sections
+
+Everything below is presentational. Your page owns the data, and the components report what happens through
+callbacks. Every section stands alone (no section imports another, and none needs a wrapper), so combine them in any
+order. Shared building blocks are the primitives plus `SectionHeader`, `NewsletterForm`, and a few internals in
+`components/shared/` (`Cta`, `MediaImage`, tones, spacing).
+
+```jsx
+import {
+  AnnouncementBar, Navbar, HeroBanner, FeaturedCategoryGrid, FeaturedProducts,
+  PromoBanner, Testimonials, FaqAccordion, NewsletterSignup, Footer,
+} from './library'
+```
+
+**Conventions shared by the sections**
+
+| Prop | Notes |
+| --- | --- |
+| `title`, `description`, `action` | Section heading block (`SectionHeader`). `action` is `{ label, href?, onClick? }`: a link when it has an `href`, otherwise a button. Same shape for `primaryAction` / `secondaryAction` on the hero and promo. |
+| `onAction(action, event)` | Called for every button in the section, after the action's own `onClick`. |
+| `headingLevel` | Level of the section title. Hero defaults to `1`, everything else to `2`. Items inside use the next level. |
+| `spacing` | `'none' \| 'sm' \| 'md' \| 'lg'` vertical padding. A prop, not a class, because two `py-*` classes are resolved by stylesheet order. Adjacent sections add their paddings together. |
+| `tone` | `default`, `muted`, `primary`, `accent` or `dark` where a section can sit on a colored band. `dark` re-themes its subtree through `data-theme="dark"` (always dark, even on a light page). |
+| `containerSize`, `id`, `className` | `Container` size, anchor id, extra classes. |
+| `labels` | Override built-in strings (localisation). |
+
+Each section is a landmark named by its title (`aria-labelledby`). Give `labels` / `navLabel` unique names if you put
+two of the same section on one page.
+
+### Footer
+
+```jsx
+<Footer
+  variant="columns"            // 'simple' | 'columns' | 'newsletter' | 'dark'
+  brand={{ name: 'Northwind', href: '/', description: 'Made in small batches.' }}
+  columns={[{ title: 'Shop', links: [{ label: 'New arrivals', href: '/new' }] }]}
+  social={[{ platform: 'instagram', href: 'https://instagram.com/…' }]}
+  newsletter={{ title: 'One email a month', onSubscribe: async ({ email }) => api.subscribe(email) }}
+  legalLinks={[{ label: 'Privacy', href: '/privacy' }]}
+  bottomSlot={<CurrencyPicker />}
+  onNavigate={(item, event) => { event.preventDefault(); router.push(item.href) }}
+/>
+```
+
+All variants take the same props (contract in `components/Footer/types.js`); a variant ignores what it does not show.
+
+| `variant` | Look | Uses |
+| --- | --- | --- |
+| `simple` | One slim block: wordmark, one row of links, social icons, legal line. | `links` (or the first 6 links of `columns`), `social`, legal bar |
+| `columns` | Brand and social on the left, link columns on the right (auto-fit to 2 to 5 columns). | `columns`, `social`, legal bar |
+| `newsletter` | Large signup band on top, then the columns. No `newsletter` prop, no band. | `newsletter`, `columns`, `social`, legal bar |
+| `dark` | Premium look: always dark, spaced serif wordmark, hairline rules. Uses the `font-display` token. | everything, including a compact `newsletter` |
+
+Social links need only a `platform` (`instagram`, `facebook`, `x`, `youtube`) and an `href`; add `icon` and `label`
+for anything else. Links with `external: true` open in a new tab and say so to screen readers.
+
+### NewsletterForm (used by `NewsletterSignup` and the footers)
+
+```jsx
+<NewsletterForm onSubscribe={async ({ email, consent }) => { await myApi.subscribe(email) }} consent="I agree to receive emails." />
+```
+
+There is **no email service**: it validates the address, calls `onSubscribe`, and reflects the result. A rejected promise
+shows `error.message` and keeps the typed address; success clears the field. The button shows a busy state while the
+callback is pending, and results are announced through a live region. Passing `consent` adds a required checkbox and the
+callback receives `{ email, consent }`. Override any string with `labels` (`email`, `placeholder`, `submit`, `success`,
+`invalidEmail`, `consentRequired`, `failed`).
+
+### Sections
+
+| Component | Layouts / options | Notes |
+| --- | --- | --- |
+| `AnnouncementBar` | `messages` (`{ text, href?, linkLabel? }[]`), `tone`, `dismissible`, `open` / `defaultOpen` / `onOpenChange`, `autoRotate`, `interval` | Several messages rotate with previous / next / pause buttons. Rotation stops on hover or focus and never starts under reduced motion. It does not remember a dismissal: persist it yourself and pass `open={false}`. |
+| `HeroBanner` | `layout`: `split` or `overlay`; `imagePosition`, `align`, `tone`, `badge`, `footnote` | Title is an `<h1>`. `overlay` is always dark with a scrim over the photo. |
+| `FeaturedCategoryGrid` | `layout`: `grid` or `mosaic`; `columns` 2 to 4; `aspect`; `onCategoryClick` | `mosaic` makes the first tile large (best with 5). Each tile is a link, a button or plain, depending on `href` / `onCategoryClick`. |
+| `FeaturedProducts` | `layout`: `grid` or `carousel`; `variant` (any card design); `columns` | Forwards card props (`onAddToCart`, `onToggleWishlist`, `onProductClick`, `wishlistedIds`, `addingToCartIds`, `currency`, ...). Card labels go in `cardLabels`; `labels` is the section's own strings. Carousel is native scroll-snap with disabled-at-end arrows. |
+| `PromoBanner` | `layout`: `split` or `strip`; `tone`; `code` + `onCopyCode`; `image` | Inset rounded band. The code button copies to the clipboard (when allowed) and always calls `onCopyCode`. |
+| `Testimonials` | `layout`: `grid` or `slider`; `columns` | Quotes with optional `rating`, `role`, `avatar` (initials otherwise). The slider has no autoplay. |
+| `FaqAccordion` | `layout`: `stacked` or `split`; `allowMultiple`; `openIds` / `defaultOpenIds` / `onOpenChange`; `footer` | Disclosure pattern with Arrow / Home / End keys. Closed answers are hidden from assistive tech. |
+| `NewsletterSignup` | `layout`: `centered` or `split`; `tone`: `default`, `muted` or `dark`; `consent`, `privacyNote`, `image` | Wraps `NewsletterForm`. |
+
+Missing data degrades quietly: no image shows a tinted frame of the same size, and entries without the required fields
+are skipped. The photos are decorative unless you give an `alt`.
+
+### Demo homepage
+
+`npm run dev`, then open **Open the demo homepage** (or `http://localhost:5173/#/home`). It composes the announcement
+bar, the existing `Navbar`, hero, category mosaic, product carousel, promo banner, testimonials, FAQ, newsletter signup
+and footer, with a *Demo options* panel to switch the hero layout, product layout and footer variant. The cart,
+wishlist and mailing list are fake preview state (`src/preview/home/demoActions.js`); an address starting with `fail`
+shows the error state. Each section also has its own entries on the component preview page. Sample content is in
+`src/preview/home/sampleHome.js`, and the photos come from picsum.photos, so they need an internet connection.
+
 ## Styling gotcha for variant authors
 
 Tailwind decides which of two conflicting utilities wins (`relative`/`absolute`, `text-sm`/`text-xs`, `font-semibold`/
@@ -494,4 +587,4 @@ it already sets. Wrap it instead (as `WishlistButton` does for positioning), or 
 
 ## Roadmap
 
-Footers, then library build mode and npm publishing. Not included yet.
+Library build mode and npm publishing. Not included yet.
