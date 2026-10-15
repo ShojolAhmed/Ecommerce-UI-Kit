@@ -1,6 +1,7 @@
 import {
   productCardVariants,
   navbarVariants,
+  sidebarVariants,
   Button,
   buttonVariants,
   IconButton,
@@ -14,6 +15,15 @@ import {
 import NavbarDemo from './navbar/NavbarDemo.jsx'
 import ProductCardDemo from './product/ProductCardDemo.jsx'
 import ProductGridDemo from './product/ProductGridDemo.jsx'
+import SidebarDemo from './discovery/SidebarDemo.jsx'
+import DrawerDemo from './discovery/DrawerDemo.jsx'
+import DiscoveryDemo from './discovery/DiscoveryDemo.jsx'
+import {
+  ActiveFiltersDemo,
+  BreadcrumbsDemo,
+  SearchInputDemo,
+  SortDropdownDemo,
+} from './discovery/ControlsDemos.jsx'
 import TokenShowcase from './foundation/TokenShowcase.jsx'
 import Row from './foundation/Row.jsx'
 import { tokenSections } from './foundation/tokenSections.js'
@@ -148,5 +158,47 @@ export const families = [
     name: 'Product Grid',
     variants: ['interactive', 'empty'],
     render: (mode) => <ProductGridDemo mode={mode} />,
+  },
+  {
+    id: 'sidebar',
+    name: 'Sidebar',
+    variants: Object.keys(sidebarVariants),
+    render: (variant) => <SidebarDemo variant={variant} />,
+  },
+  {
+    id: 'filter-drawer',
+    name: 'Filter Drawer',
+    variants: ['bottom', 'left', 'right'],
+    render: (placement) => <DrawerDemo placement={placement} />,
+  },
+  {
+    id: 'search-input',
+    name: 'Search Input',
+    variants: ['default', 'pill', 'sizes'],
+    render: (mode) => <SearchInputDemo mode={mode} />,
+  },
+  {
+    id: 'sort-dropdown',
+    name: 'Sort Dropdown',
+    variants: ['menu', 'native'],
+    render: (mode) => <SortDropdownDemo mode={mode} />,
+  },
+  {
+    id: 'breadcrumbs',
+    name: 'Breadcrumbs',
+    variants: ['default', 'collapsed', 'custom-separator'],
+    render: (mode) => <BreadcrumbsDemo mode={mode} />,
+  },
+  {
+    id: 'active-filters',
+    name: 'Active Filters',
+    variants: ['filters', 'with-search'],
+    render: (mode) => <ActiveFiltersDemo mode={mode} />,
+  },
+  {
+    id: 'product-discovery',
+    name: 'Product Discovery (all together)',
+    variants: ['together'],
+    render: () => <DiscoveryDemo />,
   },
 ]

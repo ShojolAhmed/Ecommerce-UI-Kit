@@ -3,7 +3,7 @@ import { cn } from '../../../utils/cn.js'
 import { focusRing } from '../../../primitives/shared/styles.js'
 import { Badge, IconButton } from '../../../primitives/index.js'
 import { itemKey } from './model.js'
-import { useDialogBehavior } from './useDialogBehavior.js'
+import { useDialogBehavior } from '../../../hooks/useDialogBehavior.js'
 import SearchField from './SearchField.jsx'
 
 const placements = {

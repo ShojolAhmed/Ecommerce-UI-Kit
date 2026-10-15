@@ -3,7 +3,7 @@
 Reusable React e-commerce UI components with interchangeable design variants
 (navbars, product cards, sidebars, footers, …). Built with React, Vite, JavaScript and Tailwind CSS.
 
-> Status: **Phase 4 – product cards.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), and the `ProductCard` family (five variants) with a reusable `ProductGrid`.
+> Status: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
 
 ## Getting started
 
@@ -26,7 +26,9 @@ src/
     components/<Family>/
       <Family>.jsx       # picks a variant via the `variant` prop
       variants/          # one file per design + index.js registry
-    utils/
+    hooks/               # useDialogBehavior (focus trap, Escape, scroll lock), useControllableState
+    icons/               # built-in icons for the discovery components
+    utils/               # cn, discovery.js (pure filter / category helpers)
     index.js             # public exports
   preview/               # dev-only preview app (not packaged)
   App.jsx, main.jsx, index.css
@@ -250,6 +252,239 @@ missing and broken images, no rating, a rating without a count, long names, out 
 the busy state and the cart count in the demo are fake preview state (`src/preview/product/useProductDemo.js`): there is
 no cart or backend. The sample photos come from picsum.photos, so they need an internet connection.
 
+## Product discovery
+
+Search, sort, categories, filters and breadcrumbs for a listing page. **Your page owns all the state**: the active
+category, the filter values, the search text and the sort. The components only render what you pass in and call back
+with the next value. There is no backend, no searching, no filtering and no sorting in the library; `Sidebar` and friends
+never look at your products.
+
+```jsx
+import {
+  Breadcrumbs, SearchInput, SortDropdown, Sidebar, ActiveFilters,
+  FilterButton, FilterDrawer, ProductGrid, countActiveFilters,
+} from './library'
+
+const [category, setCategory] = useState(null)
+const [filters, setFilters] = useState({})          // { brand: ['Northwind'], price: { min: 20 }, rating: 4 }
+const [query, setQuery] = useState('')
+const [sort, setSort] = useState('featured')
+const [drawerOpen, setDrawerOpen] = useState(false)
+const triggerRef = useRef(null)
+
+const filterProps = {
+  categories, activeCategory: category, onCategoryChange: (id) => setCategory(id),
+  filterGroups, filters, onFiltersChange: setFilters,
+}
+
+<Breadcrumbs items={trail} onNavigate={(item, e) => { e.preventDefault(); router.push(item.href) }} />
+
+{/* desktop */}
+<div className="hidden lg:block w-64"><Sidebar variant="classic" {...filterProps} /></div>
+
+{/* mobile */}
+<FilterButton ref={triggerRef} className="lg:hidden" open={drawerOpen}
+  activeCount={countActiveFilters(filterGroups, filters)} onClick={() => setDrawerOpen(true)} />
+<FilterDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} triggerRef={triggerRef}
+  resultCount={results.length} {...filterProps} />
+
+<SearchInput value={query} onChange={setQuery} onSubmit={(text) => runSearch(text)} />
+<SortDropdown options={sortOptions} value={sort} onChange={setSort} />
+<ActiveFilters filterGroups={filterGroups} filters={filters} onFiltersChange={setFilters} />
+<ProductGrid products={results} />
+```
+
+### Data you provide
+
+```js
+categories = [                                   // Category[]
+  { id: 'clothing', label: 'Clothing', count: 12, href: '/c/clothing',
+    children: [{ id: 'knitwear', label: 'Knitwear', count: 5 }] },
+]
+filterGroups = [                                 // FilterGroup[]
+  { id: 'brand',  label: 'Brand',  type: 'checkbox', options: [{ value: 'northwind', label: 'Northwind', count: 3 }] },
+  { id: 'rating', label: 'Rating', type: 'radio',    options: [{ value: 4, label: '4 stars & up' }] },
+  { id: 'price',  label: 'Price',  type: 'range', min: 0, max: 300, step: 1, currency: 'USD' },
+]
+sortOptions = [{ value: 'price-asc', label: 'Price: low to high' }, /* … */]
+```
+
+| Field | Notes |
+| --- | --- |
+| `Category` | `id`, `label`, optional `count`, `href` (renders a real link; otherwise a button) and `children`. Children show only while the category or one of its descendants is active. |
+| `FilterGroup.type` | `'checkbox'` (default, many options), `'radio'` (one option) or `'range'` (min / max numbers). |
+| `FilterGroup.options` | `{ value, label, count?, disabled? }`. `value` is compared with strict equality, so keep types consistent. |
+| `FilterGroup.visibleOptions` | Checkbox groups longer than this (default 6) get "Show more". Selected options always stay visible. |
+| `FilterGroup.defaultOpen` | Initial open state when the sidebar uses accordions (collapsible sidebar, drawer). Default `true`. |
+| `FilterGroup` range fields | `min` / `max` (also placeholders; entries are clamped to them), `step`, `currency` (ISO 4217, used to format chips) or `format(amount)`. |
+
+### Filter state
+
+One plain object keyed by group id. An absent key means "nothing selected", and `{}` means "no filters".
+
+| Group type | Value | Example |
+| --- | --- | --- |
+| checkbox | array of option values | `{ brand: ['northwind', 'atelier'] }` |
+| radio | one option value | `{ rating: 4 }` |
+| range | `{ min?, max? }` | `{ price: { min: 20, max: 100 } }` |
+
+Components never mutate it: they call `onFiltersChange(next)` with the complete next object. That makes it easy to put in
+a reducer or sync with the URL. Pure helpers exported from the library (no React) cover the common operations:
+`countActiveFilters(groups, filters)`, `getActiveFilterChips`, `removeFilterChip`, `setFilterValue`, `toggleFilterOption`,
+`clearFilterGroup`, `getFilterValue` and `getCategoryPath(categories, id)`.
+
+### Sidebar
+
+```jsx
+<Sidebar variant="classic" {...filterProps} onClearAll={() => { setFilters({}); setPage(1) }} />
+```
+
+All variants take **the same props**, so changing `variant` is the only edit needed to swap designs (contract in
+`components/Sidebar/types.js`). Each sidebar fills the width of its container, except `collapsible`, which sizes itself.
+
+| Prop | Notes |
+| --- | --- |
+| `categories`, `activeCategory`, `onCategoryChange(id, category, event)` | Controlled. `id` is `null` for the "All products" row. Links navigate unless you call `event.preventDefault()`. |
+| `filterGroups`, `filters`, `onFiltersChange(next)` | Controlled (see above). Ignored by `minimal`. |
+| `onClearAll()` | Optional. Defaults to `onFiltersChange({})`. Provide it to also reset search, page, etc. The button only shows while filters are active. |
+| `labels` | Override any string: `filters`, `categories`, `allCategories` (`null` hides the row), `clearAll`, `clear`, `clearGroup(label)`, `min`, `max`, `showMore`, `showLess`, `itemCount(n)`, `expandFilters`, `collapseFilters`, `activeCount(n)`. |
+| `ariaLabel` | Name of the sidebar landmark (default: the "Filters" label). Make it unique if several sidebars share a page. |
+| `headingLevel` | Level of the sidebar title, `2`-`5` (default `2`). Sections inside use the next level. |
+| `className` | Extra classes for the root. |
+
+| `variant` | Look | Notes |
+| --- | --- | --- |
+| `classic` | Bordered panel: "Filters" header with active count and Clear all, category list, then every group open. | Best for short filter lists. |
+| `collapsible` | Same content, but each group is an accordion, and the whole panel folds into a slim rail (one toggle with the active count). | Extra props: `collapsed` + `onCollapsedChange(collapsed)` (controlled) or `defaultCollapsed`, `width` (`'16rem'`), `collapsedWidth` (`'3.5rem'`). Filters stay applied while collapsed. Sizes itself with inline widths, so its layout column must not force a width. |
+| `minimal` | Category navigation only: quiet text, a rule on the active row. | No filters, so no clear-all. Its landmark is the category `<nav>`. |
+
+**Filter groups.** Checkboxes and radios are native inputs wrapped in labels (so a click anywhere on the row works and
+screen readers read "Northwind, 3 items"). Each group has its own "Clear" button while active. **Range groups** commit on
+blur or Enter, not on every keystroke, so your page is not asked to refilter while someone types. Values are clamped to
+`min` / `max`, and a reversed pair (200 / 50) is swapped.
+
+### FilterDrawer and FilterButton
+
+```jsx
+<FilterButton ref={triggerRef} open={open} activeCount={n} onClick={() => setOpen(true)} />
+<FilterDrawer open={open} onClose={() => setOpen(false)} triggerRef={triggerRef} resultCount={results.length} {...filterProps} />
+```
+
+A modal bottom sheet or side drawer with the same content as the sidebars (categories, then accordion groups with
+44px-tall touch rows) and a footer with **Clear all** and **Show N results**. Takes every sidebar prop above, plus:
+
+| Prop | Notes |
+| --- | --- |
+| `open`, `onClose` | Required. The page owns the open state. |
+| `triggerRef` | Ref of the button that opened it, so focus returns there on close. Pass the same ref to `FilterButton`. |
+| `placement` | `'bottom'` (default, a sheet), `'left'` or `'right'`. |
+| `title` | Dialog title (default: the "Filters" label). |
+| `resultCount` | Footer reads "Show 24 results". Without it, "Show results". |
+| `onApply()` | Called just before the drawer closes from the footer button. |
+| `closeAbove` | Media query at which the drawer closes itself (default `'(min-width: 64rem)'`, i.e. when the desktop sidebar appears). |
+| `children` | Optional slot above the filters, handy for a search field or sort on small screens. |
+| `labels` | Sidebar labels plus `closeFilters`, `showResults`, `showResultsCount(n)`. |
+
+Changes apply **live** through the same callbacks as the sidebars. To stage them instead, pass a draft copy of the
+filters and commit it in `onApply`. Behaviour: focus moves in on open (to Close), Tab is trapped, Escape closes, page
+scroll is locked and focus returns to the trigger.
+
+`FilterButton` takes every `Button` prop plus `activeCount` (badge, announced as "Filters, 3 active"), `open`
+(`aria-expanded`), `label` and `activeLabel(n)`.
+
+### SearchInput
+
+```jsx
+<SearchInput value={query} onChange={setQuery} onSubmit={(text) => runSearch(text)} onClear={() => setPage(1)} />
+```
+
+Controlled. It only reports what is typed: no requests and no debouncing (debounce in your own handler if you query as
+people type).
+
+| Prop | Notes |
+| --- | --- |
+| `value`, `onChange(value, event)` | Required (the component warns in development without `value`). |
+| `onSubmit(query, event)` | Enter. Receives the trimmed text. |
+| `onClear()` | After the clear button or Escape empties the field (`onChange('')` fires too). |
+| `label`, `clearLabel`, `placeholder` | Accessible name (also names the search landmark), clear button name, placeholder. |
+| `size`, `shape`, `icon`, `className` | `'sm' \| 'md' \| 'lg'`, `'rounded' \| 'pill'`, replacement icon, classes for the `<form>`. |
+
+Keyboard: Enter submits; Escape clears a non-empty field and stops there (it will not also close a surrounding dialog).
+Give it a `label` that differs from the navbar's search so the two landmarks are distinguishable.
+
+### SortDropdown
+
+```jsx
+<SortDropdown options={sortOptions} value={sort} onChange={(value, option) => setSort(value)} />
+```
+
+| Prop | Notes |
+| --- | --- |
+| `options`, `value`, `onChange(value, option)` | `options`: `{ value, label, disabled? }`. Controlled. A `value` that matches nothing shows the placeholder. |
+| `label`, `hideLabel` | Visible label (default "Sort by") and the accessible name. `hideLabel` makes it screen-reader-only. |
+| `native` | Renders a styled native `<select>`: the OS picker on phones, nothing custom to go wrong. Same props. |
+| `size`, `align`, `placeholder`, `disabled`, `className` | `'sm' \| 'md' \| 'lg'`; `'start' \| 'end'` edge the open list lines up with; placeholder text. |
+
+The default rendering is a listbox following the WAI-ARIA "select-only combobox" pattern. Keyboard: Enter, Space or
+ArrowDown/Up open; arrows, Home and End move; Enter or Space picks; Escape closes without changing; Tab commits the
+highlighted option; typing jumps to a matching label. Focus never leaves the trigger. Use `native` below your mobile breakpoint
+if you prefer the OS picker there.
+
+### Breadcrumbs
+
+```jsx
+<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Clothing', href: '/c/clothing' }, { label: 'Knitwear' }]}
+             onNavigate={(item, event) => { event.preventDefault(); router.push(item.href) }} />
+```
+
+| Prop | Notes |
+| --- | --- |
+| `items` | `{ id?, label, href? }`, root first, **current page last**. The last item is `aria-current="page"` and never a link. |
+| `onNavigate(item, event)` | Items with `href` are links, items without are buttons; both call it. |
+| `maxItems` | Keep the first and last items and fold the middle behind a "…" button (minimum 2). Activating it reveals the rest and moves focus to the first revealed crumb. |
+| `separator`, `label`, `expandLabel`, `className` | Replacement separator (rendered `aria-hidden`), name of the `<nav>` (default "Breadcrumb"), name of the "…" button. |
+
+### ActiveFilters
+
+```jsx
+<ActiveFilters filterGroups={filterGroups} filters={filters} onFiltersChange={setFilters}
+  extraChips={query ? [{ id: 'q', label: `Search: “${query}”`, onRemove: () => setQuery('') }] : []} />
+```
+
+Removable chips for the filters currently applied, plus **Clear all**. Chips are built from the same `filterGroups` and
+`filters` as the sidebar, so a range reads "Price: $20 – $100". Anything else (search text, a category) goes in `extraChips`
+(`{ id, label, onRemove }`), shown before the filter chips. With no chips it renders nothing visible and takes no layout
+space.
+
+| Prop | Notes |
+| --- | --- |
+| `filterGroups`, `filters`, `onFiltersChange(next)` | Removing a chip calls it with the next filter object. |
+| `onClearAll()` | Optional. Defaults to `onFiltersChange({})` plus every extra chip's `onRemove`. |
+| `extraChips` | `{ id, label, onRemove }[]`. |
+| `showGroupLabel` | `"Brand: Northwind"` (default) or just `"Northwind"`. |
+| `labels` | `list`, `clearAll`, `remove(chipText)`, `status(count)`, `rangeFrom(amount)`, `rangeUpTo(amount)`. |
+
+Accessibility: each remove button reads "Remove filter: Brand: Northwind", a polite status line announces "2 filters
+applied", and after a removal focus moves to the neighbouring chip (or the status line when none is left) so keyboard users
+never lose their place.
+
+### Accessibility summary
+
+- Sidebars are landmarks (`<aside>` / `<nav>`) with accessible names; categories use `aria-current`; filter groups are
+  labelled `group` / `radiogroup` regions; accordion headers use `aria-expanded` / `aria-controls`.
+- The drawer is a modal dialog with the same focus handling as the navbar's mobile menu (shared `useDialogBehavior`).
+- Counts are announced ("Knitwear, 12 items"); nothing relies on color alone.
+- All controls are native elements or follow a published ARIA pattern, work by keyboard and use the shared focus ring.
+
+### Demo
+
+`npm run dev` shows, under *Sidebar*, *Filter Drawer*, *Search Input*, *Sort Dropdown*, *Breadcrumbs* and *Active Filters*,
+each component on its own, and under *Product Discovery (all together)* every component wired to one set of state in
+front of a `ProductGrid`, with a sidebar-variant switcher. Below `1024px` the sidebar gives way to the Filters button and
+drawer. The sample categories, filter groups and sort options are in `src/preview/sampleDiscovery.js`; the demo's
+in-memory filtering (`applyDiscovery`) is preview-only and stands in for your catalog logic. A status line under each demo
+shows the last callback and the state the page owns.
+
 ## Styling gotcha for variant authors
 
 Tailwind decides which of two conflicting utilities wins (`relative`/`absolute`, `text-sm`/`text-xs`, `font-semibold`/
@@ -259,4 +494,4 @@ it already sets. Wrap it instead (as `WishlistButton` does for positioning), or 
 
 ## Roadmap
 
-Sidebars and footers, then library build mode and npm publishing. Not included yet.
+Footers, then library build mode and npm publishing. Not included yet.
