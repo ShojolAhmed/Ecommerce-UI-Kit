@@ -1,5 +1,4 @@
 import {
-  ProductCard,
   productCardVariants,
   navbarVariants,
   Button,
@@ -12,8 +11,9 @@ import {
   Container,
   containerSizes,
 } from '../library/index.js'
-import { sampleProducts } from './sampleData.js'
 import NavbarDemo from './navbar/NavbarDemo.jsx'
+import ProductCardDemo from './product/ProductCardDemo.jsx'
+import ProductGridDemo from './product/ProductGridDemo.jsx'
 import TokenShowcase from './foundation/TokenShowcase.jsx'
 import Row from './foundation/Row.jsx'
 import { tokenSections } from './foundation/tokenSections.js'
@@ -141,12 +141,12 @@ export const families = [
     id: 'product-card',
     name: 'Product Card',
     variants: Object.keys(productCardVariants),
-    render: (variant) => (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sampleProducts.map((product) => (
-          <ProductCard key={product.id} variant={variant} product={product} />
-        ))}
-      </div>
-    ),
+    render: (variant) => <ProductCardDemo variant={variant} />,
+  },
+  {
+    id: 'product-grid',
+    name: 'Product Grid',
+    variants: ['interactive', 'empty'],
+    render: (mode) => <ProductGridDemo mode={mode} />,
   },
 ]

@@ -3,7 +3,7 @@
 Reusable React e-commerce UI components with interchangeable design variants
 (navbars, product cards, sidebars, footers, …). Built with React, Vite, JavaScript and Tailwind CSS.
 
-> Status: **Phase 3 – navbars.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), a sample `ProductCard`, and the `Navbar` family with four variants.
+> Status: **Phase 4 – product cards.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), and the `ProductCard` family (five variants) with a reusable `ProductGrid`.
 
 ## Getting started
 
@@ -122,6 +122,141 @@ opens a panel, a click after hover pins it, and Escape, outside click or tabbing
 (clicking links, searching and the cart button update a status line). Layouts follow the browser width, so resize the
 window below `768px` to see the mobile layouts.
 
+## Product Card
+
+```jsx
+import { ProductCard } from './library'
+
+<ProductCard
+  variant="sale"               // 'minimal' | 'sale' | 'overlay' | 'horizontal' | 'luxury'
+  product={{
+    id: 1001,
+    name: 'Merino Crewneck Sweater',
+    price: 89,
+    originalPrice: 120,
+    image: '/img/sweater.jpg',
+    rating: 4.7,
+    reviewCount: 312,
+    badges: ['New', { label: 'Bestseller', variant: 'brand' }],
+    href: '/products/merino-crewneck',
+  }}
+  isWishlisted={wishlist.has(1001)}
+  onAddToCart={(product) => cart.add(product.id)}
+  onToggleWishlist={(product) => wishlist.toggle(product.id)}
+  onProductClick={(product, event) => { event.preventDefault(); router.push(product.href) }}
+/>
+```
+
+Every variant takes the **same props**, so changing `variant` is the only edit needed to swap designs. The cards are
+purely presentational: they keep no cart or wishlist state and call no API. Your page owns the logic and passes state in
+(`isWishlisted`, `addingToCart`) and callbacks out. The full contract is in `src/library/components/ProductCard/types.js`.
+
+**`product`**
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | `string \| number` | Required. |
+| `name` | `string` | Required. |
+| `price` | `number` | Required. Major units (`49.9` = $49.90). |
+| `originalPrice` | `number` | Optional. Shown struck through, and drives the discount, only when higher than `price`. |
+| `image` | `string` | Optional. A missing or failing URL shows a placeholder of the same size (no layout shift). |
+| `imageAlt` | `string` | Optional. Images are decorative by default because the name sits beside them. |
+| `rating` | `number` | Optional, 0–5, shown to the nearest half star. Hidden when missing or 0. |
+| `reviewCount` | `number` | Optional. Shown compactly (`1.2K`) and announced in full. Hidden when missing or 0. |
+| `badges` | `(string \| { label, variant? })[]` | Optional. `variant` is any `Badge` variant (default `neutral`). Long labels truncate. |
+| `href` | `string` | Optional. Makes the name a real link. |
+| `brand`, `description` | `string` | Optional. `description` is shown by `horizontal` only. |
+| `inStock` | `boolean` | Optional, default `true`. `false` fades the image and disables add to cart. |
+
+**Props**
+
+| Prop | Notes |
+| --- | --- |
+| `product` | See above. |
+| `isWishlisted`, `addingToCart` | Controlled booleans. The wishlist button uses `aria-pressed`; `addingToCart` shows the busy state and ignores clicks. |
+| `onAddToCart(product, event)` | Omit to hide the add-to-cart button. |
+| `onToggleWishlist(product, event)` | Omit to hide the wishlist button. |
+| `onProductClick(product, event)` | Fires when the card is activated. With `href`, call `event.preventDefault()` to route client-side. |
+| `currency`, `locale` | Price formatting through `Intl.NumberFormat`. Defaults: `'USD'` and the browser locale. |
+| `formatPrice(amount, product)` | Replaces the built-in formatting entirely. |
+| `labels` | Override any string for localisation: `addToCart`, `outOfStock`, `wishlist`, `currentPrice`, `originalPrice`, and the functions `off(percent)`, `save(amountText)`, `rating(value)`, `reviews(count)`. |
+| `headingLevel` | Heading level of the name, `2`–`6` (default `3`). Pick the level below your section heading. |
+| `className` | Extra classes for the card root. |
+
+**Variants**
+
+| `variant` | Look | Notes |
+| --- | --- | --- |
+| `minimal` | Borderless, square photo, quiet text, outlined button. | One badge, on the image. |
+| `sale` | Bordered card, bold `-26%` badge, price in the danger color, struck-through original, "Save $31.00". | Falls back to a plain price when there is no real discount, so it can be used on a mixed catalog. |
+| `overlay` | Portrait photo with the wishlist heart on it and an add-to-cart bar that slides up over the image. | The bar shows on hover or keyboard focus on hover-capable devices and is always visible on touch screens. Text stays below the image. |
+| `horizontal` | Image left, details right. | For lists and search results. Shows `description` from `sm` up. |
+| `luxury` | Tall portrait photo, square corners, wide letter-spacing, centered text, slow image zoom, outlined labels instead of colored pills. | Uses the `font-display` token, so set it in `theme.css` to give it the brand's serif. |
+
+**Behaviour shared by all variants**
+
+- **One click target.** The name is the link (or a button when there is only `onProductClick`, or plain text when there is
+  neither) and is stretched over the whole card, so the image and the empty space are clickable without nesting
+  interactive elements. The keyboard focus ring outlines the whole card. The wishlist and add-to-cart buttons sit above
+  that layer and never trigger a product click.
+- **Accessible names.** Buttons are named with the product ("Add to cart: Name", "Add to wishlist: Name"). Stars read
+  "Rated 4.7 out of 5", prices read "Current price: … Original price: …", the discount badge reads "26% off".
+- **Missing data.** No rating, reviews, badges, brand, image or `originalPrice` simply leaves that part out. A stale
+  `originalPrice` that is not higher than `price` is ignored. Entries the grid cannot render are skipped (see below).
+- **Responsive.** Cards fill their container; pair them with `ProductGrid` or your own grid. Names clamp to two lines.
+  Verified down to 320px wide.
+
+**Where the data logic lives.** All parsing and formatting (discount, rating, price, badges) lives in
+`ProductCard/shared/model.js` as pure functions, so a new variant only arranges the pieces in `shared/`.
+
+## Product Grid
+
+```jsx
+import { ProductGrid } from './library'
+
+<ProductGrid
+  products={products}
+  variant="overlay"
+  wishlistedIds={wishlist}                 // array or Set of ids
+  addingToCartIds={pendingIds}
+  onAddToCart={addToCart}
+  onToggleWishlist={toggleWishlist}
+  onProductClick={openProduct}
+  currency="USD"
+  label="New arrivals"
+/>
+```
+
+Renders a semantic list (`<ul>` of `<li>`) of cards in the selected variant. It forwards every card prop, so see the
+table above for `onAddToCart`, `onToggleWishlist`, `onProductClick`, `currency`, `locale`, `formatPrice`, `labels` and
+`headingLevel`.
+
+| Prop | Notes |
+| --- | --- |
+| `products` | `Product[]`. Entries without an `id` or a `name` are skipped (with a console warning in development). |
+| `variant` | Any card variant (default `minimal`). Switching it needs no other change. |
+| `columns` | `1 \| 2 \| 3 \| 4`: the column count on wide screens, collapsing on smaller ones. Omit to use the variant's own responsive layout (4 columns for `minimal`/`sale`/`overlay`, 2 for `horizontal`, 3 for `luxury`). |
+| `wishlistedIds`, `addingToCartIds` | Ids (array or `Set`) mapped to each card's `isWishlisted` / `addingToCart`. Compared with strict equality, so keep id types consistent. |
+| `emptyState` | Node shown when there is nothing to render. Defaults to "No products to show." |
+| `label` | Accessible name of the list. |
+| `className`, `cardClassName` | Extra classes for the grid and for every card. |
+
+Per-variant defaults are exported as `productCardLayouts` (`{ columns, gap }` class strings) if you build your own grid.
+
+**Demo.** `npm run dev` shows every card variant (four data states each: discounted, long name without a rating, broken
+image, out of stock) under *Product Card*, and a playground under *Product Grid* with a variant switcher, a column
+switcher and the empty states. The 12 sample products live in `src/preview/sampleData.js` and deliberately include
+missing and broken images, no rating, a rating without a count, long names, out of stock and mixed id types. The wishlist,
+the busy state and the cart count in the demo are fake preview state (`src/preview/product/useProductDemo.js`): there is
+no cart or backend. The sample photos come from picsum.photos, so they need an internet connection.
+
+## Styling gotcha for variant authors
+
+Tailwind decides which of two conflicting utilities wins (`relative`/`absolute`, `text-sm`/`text-xs`, `font-semibold`/
+`font-normal`) by its stylesheet order, **not** by their order in `className`. Do not pass a utility to a primitive that
+it already sets. Wrap it instead (as `WishlistButton` does for positioning), or use the important modifier on purpose
+(`rounded-none!` in the luxury button), and avoid baking defaults into shared components that variants must override.
+
 ## Roadmap
 
-Product cards, sidebars and footers, then library build mode and npm publishing. Not included yet.
+Sidebars and footers, then library build mode and npm publishing. Not included yet.

@@ -1,11 +1,11 @@
 import { productCardVariants, DEFAULT_PRODUCT_CARD_VARIANT } from './variants/index.js'
 
 /**
- * Variant-switching ProductCard. All variants share the same props contract,
- * so designs can be swapped by changing only `variant`.
+ * Variant-switching ProductCard. All variants share the props contract
+ * documented in `types.js` (ProductCardProps), so designs can be swapped by
+ * changing only `variant`.
  *
- * @param {object} props
- * @param {string} [props.variant='classic']
+ * @param {import('./types.js').ProductCardProps & { variant?: 'minimal'|'sale'|'overlay'|'horizontal'|'luxury' }} props
  */
 export default function ProductCard({ variant = DEFAULT_PRODUCT_CARD_VARIANT, ...props }) {
   const Variant = productCardVariants[variant]
