@@ -12,6 +12,19 @@ const FOCUSABLE = [
 let lockCount = 0
 let saved = null
 
+/**
+ * Open dialogs, oldest first. Only the last one (the topmost) reacts to the keyboard and to
+ * focus changes, so a confirmation dialog opened from inside a drawer does not fight the
+ * drawer for focus, and Escape closes just the dialog on top.
+ */
+const dialogStack = []
+
+/**
+ * Elements outside a dialog that stay reachable while it is open (toast notifications). Mark
+ * them with this attribute; their controls join the end of the dialog's Tab cycle.
+ */
+const COMPANION_SELECTOR = '[data-ui-dialog-companion]'
+
 /** Lock page scroll (ref-counted, compensates for the scrollbar so nothing jumps). */
 function lockScroll() {
   if (lockCount === 0) {
@@ -36,12 +49,18 @@ function focusableIn(root) {
   return [...root.querySelectorAll(FOCUSABLE)].filter((el) => !el.closest('[hidden]'))
 }
 
+/** The dialog panel followed by every companion region. */
+const scopeOf = (panel) => [panel, ...document.querySelectorAll(COMPANION_SELECTOR)]
+
 /**
  * Modal behaviour shared by the Navbar mobile menu and the FilterDrawer:
  *  - moves focus inside on open and returns it to the trigger on close
  *  - traps Tab / Shift+Tab (and pulls stray focus back in)
  *  - closes on Escape
  *  - locks page scroll while open
+ *
+ * Dialogs can stack (a confirmation over a drawer): only the topmost one handles keys and
+ * focus. Regions marked `data-ui-dialog-companion` (toasts) stay reachable by Tab.
  */
 export function useDialogBehavior({ open, onClose, panelRef, returnFocusRef, initialFocusRef }) {
   const onCloseRef = useRef(onClose)
@@ -54,10 +73,14 @@ export function useDialogBehavior({ open, onClose, panelRef, returnFocusRef, ini
     if (!open || !panel) return undefined
 
     const returnTarget = returnFocusRef?.current ?? document.activeElement
+    const token = {}
+    dialogStack.push(token)
+    const isTopmost = () => dialogStack[dialogStack.length - 1] === token
     const unlock = lockScroll()
     ;(initialFocusRef?.current ?? focusableIn(panel)[0] ?? panel).focus()
 
     const onKeyDown = (event) => {
+      if (!isTopmost()) return
       if (event.key === 'Escape') {
         event.stopPropagation()
         onCloseRef.current()
@@ -65,7 +88,8 @@ export function useDialogBehavior({ open, onClose, panelRef, returnFocusRef, ini
       }
       if (event.key !== 'Tab') return
 
-      const items = focusableIn(panel)
+      const scope = scopeOf(panel)
+      const items = scope.flatMap(focusableIn)
       if (items.length === 0) {
         event.preventDefault()
         panel.focus()
@@ -75,7 +99,7 @@ export function useDialogBehavior({ open, onClose, panelRef, returnFocusRef, ini
       const last = items[items.length - 1]
       const active = document.activeElement
 
-      if (!panel.contains(active)) {
+      if (!scope.some((part) => part.contains(active))) {
         event.preventDefault()
         first.focus()
       } else if (event.shiftKey && active === first) {
@@ -88,7 +112,9 @@ export function useDialogBehavior({ open, onClose, panelRef, returnFocusRef, ini
     }
 
     const onFocusIn = (event) => {
-      if (!panel.contains(event.target)) (focusableIn(panel)[0] ?? panel).focus()
+      if (!isTopmost()) return
+      if (scopeOf(panel).some((part) => part.contains(event.target))) return
+      ;(focusableIn(panel)[0] ?? panel).focus()
     }
 
     document.addEventListener('keydown', onKeyDown)
@@ -96,6 +122,7 @@ export function useDialogBehavior({ open, onClose, panelRef, returnFocusRef, ini
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('focusin', onFocusIn)
+      dialogStack.splice(dialogStack.indexOf(token), 1) // before focus returns, so the dialog below takes over
       unlock()
       returnTarget?.focus?.()
     }

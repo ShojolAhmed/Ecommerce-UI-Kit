@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ToastProvider } from './library/index.js'
 import PreviewPage from './preview/PreviewPage.jsx'
 import HomepageDemo from './preview/home/HomepageDemo.jsx'
 
@@ -14,5 +15,6 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
-  return home ? <HomepageDemo /> : <PreviewPage />
+  // One toast viewport for the whole preview; demos call `useToast()`.
+  return <ToastProvider>{home ? <HomepageDemo /> : <PreviewPage />}</ToastProvider>
 }

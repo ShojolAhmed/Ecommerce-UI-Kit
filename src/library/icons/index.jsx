@@ -147,3 +147,32 @@ export const GlobeIcon = ({ className, ...props }) => (
     <path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9Z" />
   </svg>
 )
+
+/* ---- Added for the cart, dialogs and toasts ---- */
+
+export const TrashIcon = ({ className, ...props }) => (
+  <svg {...base} {...props} className={sized(className)}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+  </svg>
+)
+
+export const ShoppingBagIcon = ({ className, ...props }) => (
+  <svg {...base} {...props} className={sized(className)}>
+    <path d="M5 8h14l-1 12H6L5 8Z" />
+    <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+  </svg>
+)
+
+export const InfoIcon = ({ className, ...props }) => (
+  <svg {...base} {...props} className={sized(className)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </svg>
+)
+
+export const AlertTriangleIcon = ({ className, ...props }) => (
+  <svg {...base} {...props} className={sized(className)}>
+    <path d="M12 3.5 2.5 20h19L12 3.5Z" />
+    <path d="M12 10v4.5M12 17.5h.01" />
+  </svg>
+)

@@ -23,6 +23,19 @@ export * from './components/NewsletterSignup/index.js'
 export * from './components/NewsletterForm/index.js'
 export * from './components/SectionHeader/index.js'
 
+// Generic disclosure components. `FaqAccordion` is built on `Accordion`.
+export * from './components/Accordion/index.js'
+export * from './components/Tabs/index.js'
+
+// Cart and overlays. UI only: your page owns the cart state (see the pure helpers below).
+export * from './components/QuantitySelector/index.js'
+export * from './components/CartItemRow/index.js'
+export * from './components/CartSummary/index.js'
+export * from './components/EmptyCartState/index.js'
+export * from './components/CartDrawer/index.js'
+export * from './components/ConfirmDialog/index.js'
+export * from './components/Toast/index.js'
+
 // Pure helpers for filter state and category trees (no React): use them in your own state logic.
 export {
   countActiveFilters,
@@ -34,3 +47,15 @@ export {
   getFilterValue,
   getCategoryPath,
 } from './utils/discovery.js'
+
+// Pure helpers for cart quantities and totals (no React): use them in your own cart logic.
+export {
+  isValidCartItem,
+  getMinQuantity,
+  getMaxQuantity,
+  clampQuantity,
+  getLineTotal,
+  getLineSavings,
+  getItemCount,
+  getCartTotals,
+} from './utils/cart.js'

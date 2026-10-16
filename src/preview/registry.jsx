@@ -36,6 +36,18 @@ import {
   PromoBannerDemo,
   TestimonialsDemo,
 } from './home/SectionDemos.jsx'
+import {
+  AccordionDemo,
+  CartItemRowDemo,
+  CartSummaryDemo,
+  ConfirmDialogDemo,
+  EmptyCartDemo,
+  QuantitySelectorDemo,
+  TabsDemo,
+  ToastDemo,
+} from './cart/ComponentDemos.jsx'
+import CartDrawerDemo from './cart/CartDrawerDemo.jsx'
+import CartExperienceDemo from './cart/CartExperienceDemo.jsx'
 import TokenShowcase from './foundation/TokenShowcase.jsx'
 import Row from './foundation/Row.jsx'
 import { tokenSections } from './foundation/tokenSections.js'
@@ -266,5 +278,65 @@ export const families = [
     name: 'Newsletter Signup',
     variants: ['centered', 'split', 'split-image', 'dark', 'with-consent'],
     render: (mode) => <NewsletterSignupDemo mode={mode} />,
+  },
+  {
+    id: 'quantity-selector',
+    name: 'Quantity Selector',
+    variants: ['default', 'with-limit', 'disabled', 'sizes'],
+    render: (mode) => <QuantitySelectorDemo mode={mode} />,
+  },
+  {
+    id: 'cart-item-row',
+    name: 'Cart Item Row',
+    variants: ['default', 'limits', 'unavailable', 'compact', 'read-only', 'pending', 'disabled'],
+    render: (mode) => <CartItemRowDemo mode={mode} />,
+  },
+  {
+    id: 'cart-summary',
+    name: 'Cart Summary',
+    variants: ['default', 'with-discount', 'calculated-later', 'checkout-disabled', 'loading'],
+    render: (mode) => <CartSummaryDemo mode={mode} />,
+  },
+  {
+    id: 'empty-cart-state',
+    name: 'Empty Cart State',
+    variants: ['page', 'compact', 'two-actions'],
+    render: (mode) => <EmptyCartDemo mode={mode} />,
+  },
+  {
+    id: 'cart-drawer',
+    name: 'Cart Drawer',
+    variants: ['right', 'left', 'with-issues', 'empty', 'loading'],
+    render: (variant) => <CartDrawerDemo variant={variant} />,
+  },
+  {
+    id: 'confirm-dialog',
+    name: 'Confirm Dialog',
+    variants: ['default', 'danger', 'loading'],
+    render: (mode) => <ConfirmDialogDemo mode={mode} />,
+  },
+  {
+    id: 'toast',
+    name: 'Toast Notifications',
+    variants: ['tones', 'with-action', 'sticky'],
+    render: (mode) => <ToastDemo mode={mode} />,
+  },
+  {
+    id: 'tabs',
+    name: 'Tabs',
+    variants: ['underline', 'pills', 'vertical', 'manual', 'full-width', 'scrolling'],
+    render: (mode) => <TabsDemo mode={mode} />,
+  },
+  {
+    id: 'accordion',
+    name: 'Accordion',
+    variants: ['divided', 'boxed', 'allow-multiple', 'always-one-open', 'small'],
+    render: (mode) => <AccordionDemo mode={mode} />,
+  },
+  {
+    id: 'cart-experience',
+    name: 'Cart Experience (all together)',
+    variants: ['drawer-flow', 'cart-page'],
+    render: (mode) => <CartExperienceDemo mode={mode} />,
   },
 ]

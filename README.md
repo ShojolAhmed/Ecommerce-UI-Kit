@@ -3,7 +3,7 @@
 Reusable React e-commerce UI components with interchangeable design variants
 (navbars, product cards, sidebars, footers, homepage sections, …). Built with React, Vite, JavaScript and Tailwind CSS.
 
-> Status: **Phase 6 – footers and homepage sections.** Four `Footer` variants and eight independent homepage sections (see below), on top of the phase 5 components. Earlier: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
+> Status: **Phase 7 – cart and overlays.** `QuantitySelector`, `CartItemRow`, `CartSummary`, `EmptyCartState`, `CartDrawer`, `ConfirmDialog`, toasts, `Tabs` and a reusable `Accordion` (see "Cart and overlays" below). Earlier: **Phase 6 – footers and homepage sections.** Four `Footer` variants and eight independent homepage sections (see below), on top of the phase 5 components. Earlier: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
 
 ## Getting started
 
@@ -26,9 +26,9 @@ src/
     components/<Family>/
       <Family>.jsx       # picks a variant via the `variant` prop
       variants/          # one file per design + index.js registry
-    hooks/               # useDialogBehavior (focus trap, Escape, scroll lock), useControllableState
-    icons/               # built-in icons for the discovery components
-    utils/               # cn, discovery.js (pure filter / category helpers)
+    hooks/               # useDialogBehavior (focus trap, Escape, scroll lock, dialog stack), useControllableState
+    icons/               # built-in icons
+    utils/               # cn, discovery.js (pure filter helpers), cart.js (pure cart helpers)
     index.js             # public exports
   preview/               # dev-only preview app (not packaged)
   App.jsx, main.jsx, index.css
@@ -563,7 +563,7 @@ callback receives `{ email, consent }`. Override any string with `labels` (`emai
 | `FeaturedProducts` | `layout`: `grid` or `carousel`; `variant` (any card design); `columns` | Forwards card props (`onAddToCart`, `onToggleWishlist`, `onProductClick`, `wishlistedIds`, `addingToCartIds`, `currency`, ...). Card labels go in `cardLabels`; `labels` is the section's own strings. Carousel is native scroll-snap with disabled-at-end arrows. |
 | `PromoBanner` | `layout`: `split` or `strip`; `tone`; `code` + `onCopyCode`; `image` | Inset rounded band. The code button copies to the clipboard (when allowed) and always calls `onCopyCode`. |
 | `Testimonials` | `layout`: `grid` or `slider`; `columns` | Quotes with optional `rating`, `role`, `avatar` (initials otherwise). The slider has no autoplay. |
-| `FaqAccordion` | `layout`: `stacked` or `split`; `allowMultiple`; `openIds` / `defaultOpenIds` / `onOpenChange`; `footer` | Disclosure pattern with Arrow / Home / End keys. Closed answers are hidden from assistive tech. |
+| `FaqAccordion` | `layout`: `stacked` or `split`; `allowMultiple`; `openIds` / `defaultOpenIds` / `onOpenChange`; `footer` | Heading block around the generic `Accordion`. Disclosure pattern with Arrow / Home / End keys. Closed answers are hidden from assistive tech. |
 | `NewsletterSignup` | `layout`: `centered` or `split`; `tone`: `default`, `muted` or `dark`; `consent`, `privacyNote`, `image` | Wraps `NewsletterForm`. |
 
 Missing data degrades quietly: no image shows a tinted frame of the same size, and entries without the required fields
@@ -577,6 +577,253 @@ and footer, with a *Demo options* panel to switch the hero layout, product layou
 wishlist and mailing list are fake preview state (`src/preview/home/demoActions.js`); an address starting with `fail`
 shows the error state. Each section also has its own entries on the component preview page. Sample content is in
 `src/preview/home/sampleHome.js`, and the photos come from picsum.photos, so they need an internet connection.
+
+## Cart and overlays
+
+**There is no cart in the library.** These components only display the items you pass in and report what the
+shopper did through callbacks (`onQuantityChange`, `onRemove`, `onCheckout`, ...). Your page owns the cart state and
+every rule: shipping, tax, discounts, stock checks, whether a removal needs confirmation, calling an API. No payment,
+authentication or inventory code exists here. The preview keeps its sample cart in `src/preview/cart/` (a reducer,
+`cartState.js`, plus the wiring in `useCartFlow.js`) as an example of that split.
+
+```jsx
+import {
+  CartDrawer, ConfirmDialog, ToastProvider, useToast, getCartTotals,
+} from './library'
+
+<ToastProvider>{/* once, near the root */}
+  <Shop />
+</ToastProvider>
+
+function Shop() {
+  const toast = useToast()
+  const [items, setItems] = useState(initialItems)       // your cart state
+  const [open, setOpen] = useState(false)
+  const [toRemove, setToRemove] = useState(null)
+  const cartButtonRef = useRef(null)
+  const { subtotal } = getCartTotals({ items })
+
+  return (
+    <>
+      <button ref={cartButtonRef} onClick={() => setOpen(true)}>Cart</button>
+      <CartDrawer
+        open={open} onClose={() => setOpen(false)} triggerRef={cartButtonRef}
+        items={items}
+        onQuantityChange={(item, quantity) => updateQuantity(item.id, quantity)}
+        onRemove={(item) => setToRemove(item)}                     // ask first
+        onLimitReached={(item, limit, value) => toast.warning(`Only ${value} available`)}
+        summary={{ shipping: subtotal >= 100 ? 0 : 8, tax: null, onCheckout: goToCheckout }}
+        emptyAction={{ label: 'Continue shopping', onClick: () => setOpen(false) }}
+      />
+      <ConfirmDialog
+        open={Boolean(toRemove)} tone="danger" title="Remove this item?" confirmLabel="Remove"
+        onCancel={() => setToRemove(null)}
+        onConfirm={() => { removeItem(toRemove.id); setToRemove(null); toast.success({ title: 'Removed', action: { label: 'Undo', onClick: undo } }) }}
+      />
+    </>
+  )
+}
+```
+
+### Cart data and helpers
+
+A line (`CartItem`, documented in `utils/cart.js`):
+
+| Field | Notes |
+| --- | --- |
+| `id`, `name`, `price`, `quantity` | Required. `id` identifies the cart **line** (the same product in two sizes is two lines). Amounts are major units, like everywhere else. |
+| `originalPrice` | Shown struck through when higher than `price`; also counted in `savings`. |
+| `image`, `imageAlt`, `href` | A missing or failing image shows a same-size placeholder. `href` makes the name a link. |
+| `options` | `[{ label, value }]`, shown as `Size: M · Colour: Navy`. |
+| `minQuantity` | Default `1`. |
+| `maxQuantity` | Stock or per-order limit; omit for none. At the limit the plus button is disabled and a note shows (`limitNote` replaces the default text). Above it, the row warns and the summary can block checkout. |
+| `inStock` | `false` locks the quantity and marks the line unavailable (it can still be removed). |
+
+Pure helpers exported from the library (no React, no state): `clampQuantity(quantity, { min, max })`, `getMinQuantity(item)`,
+`getMaxQuantity(item)`, `getLineTotal(item)`, `getLineSavings(item)`, `getItemCount(items)`,
+`getCartTotals({ items, discount?, shipping?, tax? })` (returns `{ itemCount, subtotal, savings, discount, shipping, tax, total }`,
+rounded to cents, `total` never below 0) and `isValidCartItem(item)`. Use them in your reducer so the UI and your state agree.
+
+All cart components share `currency` (default `'USD'`), `locale` and `formatPrice(amount, context)` for money, and a
+`labels` object to translate every string.
+
+### QuantitySelector
+
+```jsx
+<QuantitySelector label="Merino Sweater" value={qty} min={1} max={5} onChange={setQty} onLimitReached={(limit, value) => notify(limit, value)} />
+```
+
+| Prop | Notes |
+| --- | --- |
+| `value`, `onChange(next)` | Controlled; or `defaultValue` for uncontrolled. `next` is always a whole number inside `[min, max]`. |
+| `min` (1), `max` (none), `step` (1) | Minus is disabled at `min`, plus at `max`. |
+| `disabled` | Disables the buttons and the field. |
+| `onLimitReached(limit, limitValue)` | `'min'` or `'max'`: someone typed or stepped past a limit (`99` with `max=5`, Arrow Up at the maximum). Use it for a message. |
+| `size`, `label`, `labels`, `className` | `'sm' \| 'md' \| 'lg'`. `label` is what is counted (the product name) and is added to every accessible name ("Increase quantity: Merino Sweater"). |
+
+Typing accepts digits only and commits on blur or Enter (clamped); Escape discards the edit and does not close a
+surrounding dialog. The number is an ARIA spinbutton: Arrow Up / Down step, Home / End jump to the limits. When a
+press reaches a limit, focus moves to the number so it is not lost on the button that just became disabled. A polite
+live region announces each change and "Maximum of 5 reached".
+
+### CartItemRow
+
+```jsx
+<ul>{items.map((item) => (
+  <CartItemRow key={item.id} item={item} onQuantityChange={(item, q) => ...} onRemove={(item, event) => ...} />
+))}</ul>
+```
+
+| Prop | Notes |
+| --- | --- |
+| `item` | A `CartItem`. |
+| `onQuantityChange(item, quantity)` | Omit it (or set `readOnly`) to show "Qty 2" instead of the stepper. |
+| `onRemove(item, event)` | Omit to hide the remove button. Does nothing by itself: ask for confirmation here if you want one. |
+| `onItemClick(item, event)`, `onLimitReached(item, limit, value)` | Name click (link when `item.href`, button otherwise); limit message hook. |
+| `layout` | `'comfortable'` (default): stacked on phones, one row from `sm`. `'compact'`: always the narrow arrangement (drawers). |
+| `disabled`, `pending`, `readOnly` | `disabled` locks the controls; `pending` also dims the row and sets `aria-busy` (a request is running); `readOnly` removes the controls (order review). |
+| `currency`, `locale`, `formatPrice`, `labels`, `quantityLabels`, `as` | `as` defaults to `'li'`: use `as="div"` outside a list. |
+
+### CartSummary
+
+```jsx
+<CartSummary subtotal={346} itemCount={4} discount={34.6} discountLabel="Code SPRING10" shipping={0} tax={null}
+  onCheckout={goToCheckout} checkoutDisabled={hasProblems} checkoutDisabledReason="Remove the unavailable item to check out."
+  secondaryAction={{ label: 'Continue shopping', href: '/shop' }} />
+```
+
+You pass the **amounts**; it adds no rules of its own. `discount` shows as a negative amount when above 0.
+`shipping` and `tax`: a number shows the amount (`shipping={0}` reads "Free"), `null` reads "Calculated at checkout",
+`undefined` hides the row. Without `total` it is subtotal − discount + shipping + tax. Other props: `lines` (extra
+`{ label, amount }` rows), `onCheckout` (omit to hide the button), `checkoutLabel`, `checkoutDisabled` +
+`checkoutDisabledReason` (shown under the button and linked with `aria-describedby`), `checkoutLoading`,
+`secondaryAction` (+ `onAction`), `note`, `children` (slot above the rows for a promo field), `title`, `hideTitle`,
+`headingLevel` (2 to 6), `bordered`. Totals sit in a polite live region.
+
+### EmptyCartState
+
+```jsx
+<EmptyCartState action={{ label: 'Continue shopping', href: '/shop' }} secondaryAction={{ label: 'View wishlist', onClick: openWishlist }} />
+```
+
+`title`, `description`, `action` / `secondaryAction` (`{ label, href?, onClick? }`, a link with `href`), `onAction`, `icon`,
+`size` (`'md'` page, `'sm'` drawer), `headingLevel`, `children`.
+
+### CartDrawer
+
+A modal drawer that composes `CartItemRow` (compact), `CartSummary` and `EmptyCartState`. Fully controlled.
+
+| Prop | Notes |
+| --- | --- |
+| `open`, `onClose`, `triggerRef` | The page owns `open`. `triggerRef` is the cart button: focus returns to it on close. |
+| `items` | `CartItem[]`. Invalid entries are skipped. An empty list shows the empty state. |
+| `onQuantityChange`, `onRemove`, `onItemClick`, `onLimitReached` | As on `CartItemRow`. |
+| `pendingIds` | Array or `Set` of line ids that are being updated (locked and busy). |
+| `summary` | Props for `CartSummary` (`shipping`, `discount`, `onCheckout`, `checkoutDisabled`...). `subtotal` and `itemCount` default to what is computed from `items`. `false` hides the footer. |
+| `emptyAction`, `onEmptyAction`, `emptyState` | Action of the built-in empty state, or your own node. |
+| `loading` | Empty cart still loading: spinner. With items: `aria-busy`. |
+| `placement` | `'right'` (default) or `'left'`. |
+| `children` | Slot above the lines (a free-shipping message). |
+| `title`, `labels`, `rowLabels`, `summaryLabels`, `currency`, `locale`, `formatPrice`, `closeOnBackdropClick`, `portal`, `className` | |
+
+Focus and keyboard: focus moves to Close on open, Tab is trapped, Escape and a backdrop click close it, page scroll is
+locked, focus returns to the trigger. If the focused line is removed, focus moves to the next control in the drawer
+instead of falling to the page. It is at most 92% of narrow screens wide, so the backdrop stays tappable, and its
+slide animation is off under reduced motion. By default it renders in `document.body` (`portal={false}` keeps it in
+place), so no transformed or clipped ancestor can break its `position: fixed`.
+
+### ConfirmDialog
+
+```jsx
+<ConfirmDialog open={Boolean(toRemove)} tone="danger" title="Remove this item?" description="It will be removed from your cart."
+  confirmLabel="Remove" loading={removing} onConfirm={doRemove} onCancel={() => setToRemove(null)} />
+```
+
+An `alertdialog` named by its title and described by its description. `open`, `onConfirm`, `onCancel` (Cancel,
+Escape, backdrop), `title`, `description`, `confirmLabel`, `cancelLabel`, `tone` (`'default'` or `'danger'`),
+`initialFocus` (`'cancel'` for danger, `'confirm'` otherwise), `loading` (busy confirm button; Cancel, Escape and the
+backdrop are blocked so a request cannot be abandoned half way), `closeOnBackdropClick`, `triggerRef` (otherwise focus
+returns to whatever had it when the dialog opened), `portal`, `children`.
+
+**Stacking.** A dialog can open above the cart drawer: `useDialogBehavior` keeps a stack, and only the topmost dialog
+handles Escape and Tab. After "Cancel", focus returns to the button that opened the dialog, inside the drawer.
+
+### Toasts
+
+```jsx
+<ToastProvider placement="bottom-right">…</ToastProvider>          // once
+const { success, error, info, warning, show, dismiss, clear } = useToast()
+success({ title: 'Added to cart', description: 'Merino Sweater', action: { label: 'View cart', onClick: openCart } })
+```
+
+| Piece | Notes |
+| --- | --- |
+| `ToastProvider` | Owns the state, renders one `ToastViewport` and provides `useToast()`. Props: `placement`, `duration` (5000 ms), `limit` (5), `labels`, `portal`. |
+| `useToast()` | The functions are stable, so using it does not re-render on every toast. Throws outside a provider. |
+| `useToasts({ duration, limit })` + `ToastViewport` | The same without context: `const { toasts, show, dismiss } = useToasts()` and `<ToastViewport toasts={toasts} onDismiss={dismiss} />`. |
+| `Toast` | The card on its own (`tone`, `title`, `description`, `action`, `onDismiss`). |
+
+`show(input)` takes a string (the title) or `{ id?, tone?, title?, description?, action?, duration?, dismissible? }`
+and returns the id. `tone` is `'info'` (default), `'success'`, `'warning'` or `'error'`; `duration` is in ms (errors
+default to twice as long; `0` keeps the toast until dismissed). **Reusing an `id` updates that toast in place and
+restarts its timer**, so a burst of cart changes does not stack identical messages. `action` is one button (`Undo`);
+pressing it also dismisses the toast. Placements: `top-left`, `top-center`, `top-right`, `bottom-left`,
+`bottom-center`, `bottom-right`; on screens narrower than `sm` toasts span the full width.
+
+Accessibility: `info` and `success` announce politely (`role="status"`), `warning` and `error` assertively
+(`role="alert"`), without stealing focus. Timers pause while the pointer is over a toast or focus is inside it. The
+viewport is a labelled region that is only in the page while there are toasts. It is marked
+`data-ui-dialog-companion`, which makes its buttons part of the Tab cycle of any open dialog, so an "Undo" is still
+reachable by keyboard while the cart drawer is open. Meaning never relies on color alone (each tone has its own icon).
+
+### Tabs
+
+```jsx
+<Tabs label="Product information" items={[
+  { id: 'details', label: 'Details', content: <Details /> },
+  { id: 'reviews', label: 'Reviews', badge: 312, content: <Reviews /> },
+  { id: 'returns', label: 'Returns', disabled: true, content: null },
+]} />
+```
+
+`items` (`{ id, label, content, disabled?, badge? }`), `value` + `onChange(id, item)` (controlled) or `defaultValue`,
+`label` (accessible name of the tab list), `orientation` (`'horizontal'` | `'vertical'`), `activation`
+(`'automatic'`: arrows select; `'manual'`: Enter or Space selects), `variant` (`'underline'` | `'pills'`), `fullWidth`,
+`unmountInactive`, `className`, `panelClassName`. WAI-ARIA tabs pattern: one tab in the Tab order, Arrow keys (mirrored
+in right-to-left pages), Home / End, disabled tabs skipped. Every tab has a panel in the DOM so `aria-controls` always
+resolves; inactive panels are `hidden`. A `value` that matches nothing falls back to the first enabled tab. Horizontal
+tab rows scroll sideways on narrow screens.
+
+### Accordion
+
+```jsx
+<Accordion headingLevel={3} items={[{ id: 'care', title: 'Care instructions', content: '…' }]} defaultOpenIds={['care']} />
+```
+
+`items` (`{ id, title, content, disabled? }`), `allowMultiple`, `collapsible` (single mode: may the open panel be
+closed, default `true`), `openIds` + `onOpenChange(ids)` (controlled) or `defaultOpenIds`, `variant` (`'divided'` |
+`'boxed'`), `size` (`'sm' | 'md' | 'lg'`), `headingLevel` (heading around each title, default `3`), `contentClassName`.
+Disclosure pattern with Arrow / Home / End keys that skip disabled titles; closed content is hidden from assistive
+technology and from the tab order; animation is off under reduced motion.
+
+`FaqAccordion` was refactored onto this component (same markup, props and behavior), so there is one implementation of
+the disclosure logic. The one visible change: its trigger attribute is `data-accordion-trigger` instead of
+`data-faq-trigger`.
+
+### Shared dialog behavior
+
+`useDialogBehavior` (used by the navbar menu, `FilterDrawer`, `CartDrawer` and `ConfirmDialog`) now keeps a stack of
+open dialogs: only the topmost one reacts to Escape, Tab and focus changes. Elements carrying
+`data-ui-dialog-companion` stay reachable while any dialog is open (the toast region uses it).
+
+### Demo
+
+`npm run dev` shows each component under its own heading on the preview page: *Quantity Selector*, *Cart Item Row*
+(default, limits, unavailable, compact, read-only, pending, disabled), *Cart Summary*, *Empty Cart State*, *Cart
+Drawer* (right, left, with issues, empty, loading), *Confirm Dialog*, *Toast Notifications*, *Tabs*, *Accordion*, and
+*Cart Experience (all together)*: a navbar whose cart button opens the drawer, products that add to the cart, removal
+with confirmation and Undo, and a full cart page. The sample lines are in `src/preview/cart/sampleCart.js`; the photos
+come from picsum.photos, so they need an internet connection. Checkout only shows an informational toast.
 
 ## Styling gotcha for variant authors
 
