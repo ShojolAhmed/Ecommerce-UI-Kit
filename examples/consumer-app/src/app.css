@@ -1,0 +1,5 @@
+/* The app's own layout. The kit's stylesheet styles the kit components, not your page. */
+main { max-width: 64rem; margin: 0 auto; padding: 1.5rem; display: grid; gap: 3rem; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; max-width: 48rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin: 0; }

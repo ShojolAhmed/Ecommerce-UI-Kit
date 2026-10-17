@@ -1,0 +1,8 @@
+/*
+ * Stylesheet bundled for consumers (`ecom-ui-kit/styles.css`).
+ * Scans only the library sources, so the output has exactly the utilities the components use.
+ * Includes Tailwind's preflight reset, which the components rely on (e.g. default border styles).
+ */
+@import "tailwindcss" source(none);
+@import "./index.css";
+@source "../";

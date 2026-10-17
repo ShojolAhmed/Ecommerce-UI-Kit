@@ -3,7 +3,7 @@
 Reusable React e-commerce UI components with interchangeable design variants
 (navbars, product cards, sidebars, footers, homepage sections, …). Built with React, Vite, JavaScript and Tailwind CSS.
 
-> Status: **Phase 7 – cart and overlays.** `QuantitySelector`, `CartItemRow`, `CartSummary`, `EmptyCartState`, `CartDrawer`, `ConfirmDialog`, toasts, `Tabs` and a reusable `Accordion` (see "Cart and overlays" below). Earlier: **Phase 6 – footers and homepage sections.** Four `Footer` variants and eight independent homepage sections (see below), on top of the phase 5 components. Earlier: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
+> Status: **Phase 8 – component gallery** (see "Component gallery" below). Earlier: **Phase 7 – cart and overlays.** `QuantitySelector`, `CartItemRow`, `CartSummary`, `EmptyCartState`, `CartDrawer`, `ConfirmDialog`, toasts, `Tabs` and a reusable `Accordion` (see "Cart and overlays" below). Earlier: **Phase 6 – footers and homepage sections.** Four `Footer` variants and eight independent homepage sections (see below), on top of the phase 5 components. Earlier: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
 
 ## Getting started
 
@@ -36,10 +36,86 @@ src/
 
 ## Adding a component or variant
 
-1. **New variant:** add `variants/MyVariant.jsx` (same props as its siblings) and register it in `variants/index.js`.
-2. **New family:** create `components/<Family>/`, export it from `src/library/index.js`, and add an entry to `src/preview/registry.jsx`.
+1. **New variant:** add `variants/MyVariant.jsx` (same props as its siblings), import it in the family's `variants/index.js`,
+   add it to the `...VariantsMap` object (the key is the public `variant` name) and to the named `export { ... }` at the bottom, then
+   export it from the family's `index.js`. The selector, `ProductGrid`, the gallery and `npm run docs:api` pick it up from the registry.
+2. **New family:** create `components/<Family>/`, export it from `src/library/index.js`, and add an entry to `src/preview/registry.jsx`
+   and one `defineFamily` in `src/gallery/registry/families/`. Only give it a `variant` registry if it really has interchangeable
+   designs with one props contract; otherwise use plain props (`layout`, `tone`, ...) like the homepage sections do.
 
-Anything in `src/library` must not import from `src/preview`.
+Anything in `src/library` must not import from `src/preview` or `src/gallery`.
+
+## Using the library in your app
+
+The public entry point is the package root. It is built with `npm run build:lib` (also run by `npm pack`) into `dist-lib/`:
+
+```jsx
+import 'ecom-ui-kit/styles.css'            // once, e.g. in main.jsx: compiled styles, no Tailwind setup needed
+import { Navbar, ProductCard, LuxuryProductCard } from 'ecom-ui-kit'
+```
+
+- `react` and `react-dom` (19+) are peer dependencies. ES modules only; named exports only; unused components tree-shake away.
+- `styles.css` includes Tailwind's preflight reset, which the components rely on. It styles the kit, not your page: use your own CSS (or
+  your own Tailwind) for your layout.
+- Everything exported from `src/library/index.js` is public API. Anything else (`shared/`, `utils/` internals, `dist-lib` file names) is not.
+- A complete separate app lives in [`examples/consumer-app`](examples/consumer-app): `cd examples/consumer-app && npm install && npm run dev`.
+
+### Choosing a variant
+
+Four families have interchangeable designs behind one props contract, and select them with the same prop:
+
+```jsx
+<ProductCard variant="minimal" product={product} />
+<Navbar variant="megaMenu" brand={brand} links={links} />   // alias of "mega"
+<Sidebar variant="collapsible" ... />
+<Footer variant="newsletter" ... />
+<ProductGrid variant="luxury" products={products} />        // forwards the card variant
+```
+
+| Family | Variants (default first) | Extra accepted names |
+| --- | --- | --- |
+| `Navbar` | `minimal`, `centered`, `mega`, `compact` | `megaMenu` = `mega`, `centeredLogo` = `centered` |
+| `ProductCard`, `ProductGrid`, `FeaturedProducts` | `minimal`, `sale`, `overlay`, `horizontal`, `luxury` | |
+| `Sidebar` | `classic`, `collapsible`, `minimal` | |
+| `Footer` | `columns`, `simple`, `newsletter`, `dark` | |
+
+**Rules, the same for every family**
+
+- No `variant` (or `null`) renders the family's default, silently.
+- An **unknown** variant (typo, old name, `"constructor"`) renders the **default** design instead of nothing, and in development logs
+  one warning per value that lists the available names. Production builds fall back without logging.
+- **Direct imports** render one design with no selector: `MinimalNavbar`, `CenteredLogoNavbar`, `MegaMenuNavbar`, `CompactNavbar`;
+  `MinimalProductCard`, `SaleProductCard`, `OverlayProductCard`, `HorizontalProductCard`, `LuxuryProductCard`; `ClassicSidebar`,
+  `CollapsibleSidebar`, `MinimalSidebar`; `SimpleFooter`, `MultiColumnFooter`, `NewsletterFooter`, `DarkFooter`.
+- **Registries** are exported for tooling: `navbarVariants`, `productCardVariants`, `sidebarVariants`, `footerVariants` (canonical
+  names to components), `navbarVariantAliases`, `DEFAULT_*_VARIANT`, and `navbarRegistry` etc. (`resolveId(name)` returns the canonical name).
+- Selecting a variant is a lookup and nothing else. Behavior lives in each family's shared code (`useNavbarModel`,
+  `buildProductCardModel`, ...) and in **your** page: the kit renders the state you pass and reports changes through callbacks.
+  It never owns a cart, wishlist or filter state, so switching `variant` cannot change what the component does.
+
+The other families (hero, promo, testimonials, cart, ...) are **not** part of this scheme. They take their own props
+(`layout`, `tone`, `placement`, ...), fall back to their default on an unknown value, and have no `variant` registry.
+
+### Required props and callbacks
+
+Full tables (type, default, description, data shapes) for the variant families are in [`docs/API.md`](docs/API.md), generated from
+the JSDoc by `npm run docs:api`. In short:
+
+| Component | Required | Callbacks (all optional; omitting one usually hides its control) |
+| --- | --- | --- |
+| `Navbar` | `brand` | `onNavigate`, `search.onSubmit` / `onChange`, `account.onClick`, `wishlist.onClick`, `cart.onClick` |
+| `ProductCard` | `product` | `onAddToCart`, `onToggleWishlist`, `onProductClick` |
+| `ProductGrid` | `products` | the card callbacks above, called with the product |
+| `Sidebar` | none | `onCategoryChange`, `onFiltersChange`, `onClearAll` |
+| `Footer` | `brand` | `onNavigate`, `newsletter.onSubscribe` |
+
+Controlled values (`isWishlisted`, `wishlistedIds`, `activeCategory`, `filters`, ...) come from your state.
+
+## Verifying the public API
+
+`npm run test:api` builds the package and checks it from a consumer's side: exports, every variant through the selector vs. its
+direct import, fallbacks and warnings, aliases, and the card families that forward a variant. The consumer example is the
+integration test for installing and styling.
 
 ## Design tokens & theming
 
@@ -824,6 +900,25 @@ Drawer* (right, left, with issues, empty, loading), *Confirm Dialog*, *Toast Not
 *Cart Experience (all together)*: a navbar whose cart button opens the drawer, products that add to the cart, removal
 with confirmation and Undo, and a full cart page. The sample lines are in `src/preview/cart/sampleCart.js`; the photos
 come from picsum.photos, so they need an internet connection. Checkout only shows an informational toast.
+
+## Component gallery
+
+`npm run dev`, then open **Open the component gallery** (or `http://localhost:5173/#/gallery`). A developer-facing tool in
+`src/gallery/`, separate from `src/library` (it only imports the library's public exports; nothing in the library knows about it).
+
+- **Browse** 25 existing families in 5 categories (nothing is shown for components that do not exist yet), or filter the list.
+- **Switch variants** with the variant buttons (Arrow keys work). Library-backed families (Navbar, Footer, ProductCard, ProductGrid,
+  Sidebar) list variants straight from their `variants/index.js` registry, so a new design appears automatically.
+- **Desktop / tablet / mobile** (1280 / 768 / 390px). Each preview is an iframe of this app, so the real components get their real
+  breakpoints; wide previews are scaled to fit. Preview theme, *Reload preview* and *Open alone* are in the toolbar.
+- **Usage** is generated from the same props the preview renders, with the shared sample data (abbreviated). **Props** are parsed
+  from the library's JSDoc (`types.js` typedefs and component `@param` blocks), so they cannot drift. **Events** lists every callback.
+- **Deep links:** `#/gallery/<family>/<variant>?view=mobile&theme=dark&panel=props`.
+
+Adding things: a new variant in a library registry needs no gallery change (optionally add a label/description to the family's
+`info` map). A new family needs one `defineFamily({...})` entry in `src/gallery/registry/families/` and a line in
+`registry/index.js`. Families without a library registry (HeroBanner `layout`, Breadcrumbs `maxItems`, ...) use prop presets in
+the same format. Sample data is imported once in `src/gallery/data/index.js`. Not yet covered: primitives, Tabs, Accordion, design tokens.
 
 ## Styling gotcha for variant authors
 

@@ -5,13 +5,13 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', 'node_modules'] },
+  { ignores: ['**/dist', '**/dist-lib', '**/node_modules'] },
   js.configs.recommended,
   react.configs.flat.recommended,
   react.configs.flat['jsx-runtime'],
   reactHooks.configs.flat.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -27,7 +27,7 @@ export default [
     },
   },
   {
-    files: ['*.config.js'],
+    files: ['*.config.js', 'scripts/*.mjs', 'examples/*/*.config.js'],
     languageOptions: { globals: globals.node },
   },
 ]

@@ -1,11 +1,12 @@
 // Register each new design here. The key is the public `variant` name.
+import { createVariantRegistry } from '../../../utils/variants.js'
 import MinimalProductCard from './MinimalProductCard.jsx'
 import SaleProductCard from './SaleProductCard.jsx'
 import OverlayProductCard from './OverlayProductCard.jsx'
 import HorizontalProductCard from './HorizontalProductCard.jsx'
 import LuxuryProductCard from './LuxuryProductCard.jsx'
 
-export const productCardVariants = {
+const productCardVariantsMap = {
   minimal: MinimalProductCard,
   sale: SaleProductCard,
   overlay: OverlayProductCard,
@@ -14,6 +15,22 @@ export const productCardVariants = {
 }
 
 export const DEFAULT_PRODUCT_CARD_VARIANT = 'minimal'
+
+/**
+ * The ProductCard registry: `resolve(variant)` returns the component to render and falls back to the
+ * default (with a development warning) for an unknown name. Used by `<ProductCard variant>`.
+ */
+export const productCardRegistry = createVariantRegistry({
+  name: 'ProductCard',
+  variants: productCardVariantsMap,
+  defaultVariant: DEFAULT_PRODUCT_CARD_VARIANT,
+})
+
+/** Canonical variant names and their components. */
+export const productCardVariants = productCardRegistry.variants
+
+// Each design is also importable on its own.
+export { MinimalProductCard, SaleProductCard, OverlayProductCard, HorizontalProductCard, LuxuryProductCard }
 
 /**
  * Grid defaults per variant (used by ProductGrid): `columns` is the responsive

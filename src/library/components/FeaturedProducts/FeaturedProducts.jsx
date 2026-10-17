@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js'
 import { Container, IconButton } from '../../primitives/index.js'
 import { ChevronLeftIcon, ChevronRightIcon } from '../../icons/index.jsx'
 import { ProductCard } from '../ProductCard/index.js'
-import { DEFAULT_PRODUCT_CARD_VARIANT, productCardVariants } from '../ProductCard/variants/index.js'
+import { DEFAULT_PRODUCT_CARD_VARIANT, productCardRegistry } from '../ProductCard/variants/index.js'
 import { ProductGrid } from '../ProductGrid/index.js'
 import SectionHeader from '../SectionHeader/SectionHeader.jsx'
 import { sectionSpacing } from '../shared/spacing.js'
@@ -126,12 +126,7 @@ export default function FeaturedProducts({
   }
   const header = { id: headingId, title, description, action, onAction, headingLevel }
 
-  if (!productCardVariants[variant]) {
-    if (import.meta.env?.DEV) {
-      console.warn(`[FeaturedProducts] Unknown variant "${variant}". Available: ${Object.keys(productCardVariants).join(', ')}`)
-    }
-    return null
-  }
+  const variantId = productCardRegistry.resolveId(variant)
 
   return (
     <section
@@ -145,7 +140,7 @@ export default function FeaturedProducts({
           <ProductCarousel
             items={items}
             columns={columns}
-            variant={variant}
+            variant={variantId}
             wishlisted={wishlisted}
             adding={adding}
             cardProps={forwarded}
@@ -159,7 +154,7 @@ export default function FeaturedProducts({
             <ProductGrid
               {...forwarded}
               products={items}
-              variant={variant}
+              variant={variantId}
               columns={columns}
               wishlistedIds={wishlistedIds}
               addingToCartIds={addingToCartIds}

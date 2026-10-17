@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js'
 import { ProductCard } from '../ProductCard/index.js'
 import {
   productCardLayouts,
-  productCardVariants,
+  productCardRegistry,
   DEFAULT_PRODUCT_CARD_VARIANT,
 } from '../ProductCard/variants/index.js'
 import { gridColumns } from './gridStyles.js'
@@ -49,15 +49,9 @@ export default function ProductGrid({
     return valid
   }, [products])
 
-  const layout = productCardLayouts[variant]
-  if (!layout) {
-    if (import.meta.env?.DEV) {
-      console.warn(
-        `[ProductGrid] Unknown variant "${variant}". Available: ${Object.keys(productCardVariants).join(', ')}`,
-      )
-    }
-    return null
-  }
+  // Resolve once so the grid layout and the cards always use the same (possibly fallback) design.
+  const variantId = productCardRegistry.resolveId(variant)
+  const layout = productCardLayouts[variantId]
 
   if (items.length === 0) {
     return (
@@ -79,7 +73,7 @@ export default function ProductGrid({
         <li key={product.id} className="min-w-0">
           <ProductCard
             {...cardProps}
-            variant={variant}
+            variant={variantId}
             product={product}
             isWishlisted={wishlisted.has(product.id)}
             addingToCart={adding.has(product.id)}

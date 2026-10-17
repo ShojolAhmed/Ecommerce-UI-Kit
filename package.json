@@ -4,12 +4,38 @@
   "version": "0.1.0",
   "description": "Reusable React e-commerce UI components with interchangeable design variants.",
   "type": "module",
+  "main": "./dist-lib/ecom-ui-kit.js",
+  "module": "./dist-lib/ecom-ui-kit.js",
+  "exports": {
+    ".": {
+      "import": "./dist-lib/ecom-ui-kit.js",
+      "default": "./dist-lib/ecom-ui-kit.js"
+    },
+    "./styles.css": "./dist-lib/styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist-lib",
+    "README.md",
+    "docs"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "build:lib": "vite build --config vite.lib.config.js",
+    "prepack": "npm run build:lib",
+    "test:api": "npm run build:lib && node scripts/check-api.mjs",
+    "docs:api": "node scripts/gen-api-docs.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
   },
   "dependencies": {
     "react": "^19.3.0",

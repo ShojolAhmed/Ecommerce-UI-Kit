@@ -45,6 +45,9 @@ export default function PreviewPage() {
             <p className="text-sm text-foreground-muted">Component preview</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            <a href="#/gallery" className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Open the component gallery
+            </a>
             <a href="#/home" className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
               Open the demo homepage
             </a>
