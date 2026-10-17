@@ -49,7 +49,9 @@
     "test:consumer": "node scripts/check-consumer.mjs",
     "check:package": "npm run build:lib && publint",
     "prepack": "npm run build:lib",
-    "prepublishOnly": "node scripts/check-license.mjs && npm run lint && npm run test:api && npm run check:package"
+    "prepublishOnly": "node scripts/check-license.mjs && npm run lint && npm run test:api && npm run check:package",
+    "test:components": "vitest run",
+    "test": "vitest run && npm run test:api"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -58,6 +60,9 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
@@ -66,11 +71,13 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
+    "jsdom": "^30.1.3",
     "publint": "^0.3.25",
+    "react": ">=19",
+    "react-dom": ">=19",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",
-    "react": ">=19",
-    "react-dom": ">=19"
+    "vitest": "^5.0.5"
   }
 }

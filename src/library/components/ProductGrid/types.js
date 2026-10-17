@@ -17,6 +17,10 @@
  * @property {import('../ProductCard/types.js').ProductCardLabels} [labels]
  * @property {2|3|4|5|6} [headingLevel=3]      Heading level of each product name. Pick the level below the section heading.
  * @property {React.ReactNode} [emptyState]    Shown when there is nothing to render.
+ * @property {boolean} [loading=false]       Products are being fetched: placeholders when the list is empty, `aria-busy` when it is not.
+ * @property {number} [loadingCount=8]        Number of placeholders (1 to 24).
+ * @property {string} [loadingLabel='Loading products']  Announced while placeholders show.
+ * @property {React.ReactNode} [error]         Shown as an alert instead of the empty state when there is nothing to render (add your own retry button inside).
  * @property {string} [label]                  Accessible name of the list (e.g. "Women's knitwear").
  * @property {string} [className]
  * @property {string} [cardClassName]          Extra classes for every card.

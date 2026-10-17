@@ -48,6 +48,15 @@ export default function FramePage() {
     else root.removeAttribute('data-theme')
   }, [config.theme])
 
+  // Opened on its own (not inside the gallery's iframe): follow the address bar, so editing the
+  // #/gallery-frame/<family>/<variant> fragment in the same tab shows that component.
+  useEffect(() => {
+    if (embedded) return undefined
+    const onHashChange = () => setConfig(readConfig())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [embedded])
+
   useEffect(() => {
     if (!embedded) return undefined
     const onMessage = (event) => {

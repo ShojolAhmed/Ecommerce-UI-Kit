@@ -324,7 +324,7 @@ export function AccordionDemo({ mode }) {
         allowMultiple={mode === 'allow-multiple'}
         collapsible={mode !== 'always-one-open'}
         defaultOpenIds={['care']}
-        headingLevel={4}
+        headingLevel={3}
         onOpenChange={(ids) => setLog(`onOpenChange: ${ids.length ? ids.join(', ') : 'none'}`)}
       />
       <EventLog lastEvent={log} />

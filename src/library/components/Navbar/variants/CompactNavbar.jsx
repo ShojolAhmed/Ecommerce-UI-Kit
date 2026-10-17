@@ -18,7 +18,7 @@ const linkClass = cn(
 const currentLinkClass = 'bg-surface-muted text-foreground'
 
 const tabClass = cn(
-  'relative flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium text-foreground-muted transition-colors',
+  'relative flex min-h-14 w-full flex-col-reverse items-center justify-center gap-0.5 text-[0.6875rem] font-medium text-foreground-muted transition-colors',
   'hover:text-foreground aria-expanded:text-foreground',
   'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring',
 )
@@ -35,6 +35,9 @@ function Tab({ icon, label, accessibleLabel, count, href, onClick, ...rest }) {
         className={tabClass}
         {...rest}
       >
+        {/* The label comes first in the DOM (and `flex-col-reverse` keeps the icon on top) so the visible
+            text reads "Wishlist 3", matching the accessible name "Wishlist, 3 items" (WCAG 2.5.3). */}
+        <span aria-hidden={accessibleLabel ? true : undefined}>{label}</span>{' '}
         <span aria-hidden="true" className="relative inline-flex text-xl">
           {icon}
           {count && (
@@ -43,7 +46,6 @@ function Tab({ icon, label, accessibleLabel, count, href, onClick, ...rest }) {
             </Badge>
           )}
         </span>
-        <span aria-hidden={accessibleLabel ? true : undefined}>{label}</span>
       </Tag>
     </li>
   )

@@ -117,12 +117,12 @@ export default function CartItemRow({
   return (
     <Component
       aria-busy={pending || undefined}
-      className={cn('grid gap-x-3 gap-y-2 py-4', scale.root, pending && 'opacity-60', className)}
+      className={cn('grid gap-x-3 gap-y-2 py-4', scale.root, className)}
     >
       <MediaImage
         src={item.image}
         alt={item.imageAlt}
-        className={cn('row-span-2 aspect-[4/5] w-full rounded-control', scale.image, !available && 'opacity-60')}
+        className={cn('row-span-2 aspect-[4/5] w-full rounded-control', scale.image, (pending || !available) && 'opacity-60')}
       />
 
       <div className="min-w-0 space-y-1">

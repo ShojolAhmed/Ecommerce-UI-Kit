@@ -428,6 +428,8 @@ table above for `onAddToCart`, `onToggleWishlist`, `onProductClick`, `currency`,
 | `columns` | `1 \| 2 \| 3 \| 4`: the column count on wide screens, collapsing on smaller ones. Omit to use the variant's own responsive layout (4 columns for `minimal`/`sale`/`overlay`, 2 for `horizontal`, 3 for `luxury`). |
 | `wishlistedIds`, `addingToCartIds` | Ids (array or `Set`) mapped to each card's `isWishlisted` / `addingToCart`. Compared with strict equality, so keep id types consistent. |
 | `emptyState` | Node shown when there is nothing to render. Defaults to "No products to show." |
+| `loading`, `loadingCount`, `loadingLabel` | While `loading` and there is nothing to show, placeholders replace the empty message (`loadingCount` of them, default 8, announced with `loadingLabel`). With products present, `loading` only sets `aria-busy`. |
+| `error` | Node shown as an alert instead of the empty message when there are no products. Put your own retry button inside. |
 | `label` | Accessible name of the list. |
 | `className`, `cardClassName` | Extra classes for the grid and for every card. |
 

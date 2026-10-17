@@ -202,6 +202,10 @@ Default variant: `minimal`. See "Choosing a variant" in the README for the names
 | `labels` |  | `ProductCardLabels` |  |  |
 | `headingLevel` |  | `2\|3\|4\|5\|6` | `3` | Heading level of each product name. Pick the level below the section heading. |
 | `emptyState` |  | `React.ReactNode` |  | Shown when there is nothing to render. |
+| `loading` |  | `boolean` | `false` | Products are being fetched: placeholders when the list is empty, `aria-busy` when it is not. |
+| `loadingCount` |  | `number` | `8` | Number of placeholders (1 to 24). |
+| `loadingLabel` |  | `string` | `'Loading products'` | Announced while placeholders show. |
+| `error` |  | `React.ReactNode` |  | Shown as an alert instead of the empty state when there is nothing to render (add your own retry button inside). |
 | `label` |  | `string` |  | Accessible name of the list (e.g. "Women's knitwear"). |
 | `className` |  | `string` |  |  |
 | `cardClassName` |  | `string` |  | Extra classes for every card. |

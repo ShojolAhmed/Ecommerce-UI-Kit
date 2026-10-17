@@ -150,7 +150,7 @@ export default function Tabs({
               )}
             >
               {item.label}
-              {item.badge != null && <span className="text-xs tabular-nums opacity-80">{item.badge}</span>}
+              {item.badge != null && <span className="text-xs tabular-nums">{item.badge}</span>}
             </button>
           )
         })}
