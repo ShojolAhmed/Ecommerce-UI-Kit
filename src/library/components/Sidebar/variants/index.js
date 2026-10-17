@@ -4,7 +4,8 @@ import ClassicSidebar from './ClassicSidebar.jsx'
 import CollapsibleSidebar from './CollapsibleSidebar.jsx'
 import MinimalSidebar from './MinimalSidebar.jsx'
 
-const sidebarVariantsMap = {
+/** Canonical variant names and their components (a plain object, so unused designs can be tree-shaken). */
+export const sidebarVariants = {
   classic: ClassicSidebar,
   collapsible: CollapsibleSidebar,
   minimal: MinimalSidebar,
@@ -13,17 +14,14 @@ const sidebarVariantsMap = {
 export const DEFAULT_SIDEBAR_VARIANT = 'classic'
 
 /**
- * The Sidebar registry: `resolve(variant)` returns the component to render and falls back to the
+ * The Sidebar registry (pure, so it is dropped when nothing uses it): `resolve(variant)` returns the component to render and falls back to the
  * default (with a development warning) for an unknown name. Used by `<Sidebar variant>`.
  */
-export const sidebarRegistry = createVariantRegistry({
+export const sidebarRegistry = /* @__PURE__ */ createVariantRegistry({
   name: 'Sidebar',
-  variants: sidebarVariantsMap,
+  variants: sidebarVariants,
   defaultVariant: DEFAULT_SIDEBAR_VARIANT,
 })
-
-/** Canonical variant names and their components. */
-export const sidebarVariants = sidebarRegistry.variants
 
 // Each design is also importable on its own.
 export { ClassicSidebar, CollapsibleSidebar, MinimalSidebar }

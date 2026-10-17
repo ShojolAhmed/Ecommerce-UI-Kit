@@ -1,13 +1,30 @@
 {
   "name": "ecom-ui-kit",
-  "private": true,
   "version": "0.1.0",
-  "description": "Reusable React e-commerce UI components with interchangeable design variants.",
+  "description": "React e-commerce UI components with interchangeable design variants: navbars, product cards, sidebars, footers, homepage sections and cart UI.",
+  "keywords": [
+    "react",
+    "ecommerce",
+    "e-commerce",
+    "ui",
+    "components",
+    "tailwindcss",
+    "navbar",
+    "product-card",
+    "cart",
+    "design-system"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "main": "./dist-lib/ecom-ui-kit.js",
   "module": "./dist-lib/ecom-ui-kit.js",
+  "types": "./dist-lib/types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist-lib/types/index.d.ts",
       "import": "./dist-lib/ecom-ui-kit.js",
       "default": "./dist-lib/ecom-ui-kit.js"
     },
@@ -16,11 +33,9 @@
   },
   "files": [
     "dist-lib",
-    "README.md",
-    "docs"
-  ],
-  "sideEffects": [
-    "**/*.css"
+    "docs/API.md",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "dev": "vite",
@@ -28,29 +43,34 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build:lib": "vite build --config vite.lib.config.js",
-    "prepack": "npm run build:lib",
+    "build:lib": "vite build --config vite.lib.config.js && node scripts/build-types.mjs",
+    "docs:api": "node scripts/gen-api-docs.mjs",
     "test:api": "npm run build:lib && node scripts/check-api.mjs",
-    "docs:api": "node scripts/gen-api-docs.mjs"
+    "test:consumer": "node scripts/check-consumer.mjs",
+    "check:package": "npm run build:lib && publint",
+    "prepack": "npm run build:lib",
+    "prepublishOnly": "node scripts/check-license.mjs && npm run lint && npm run test:api && npm run check:package"
   },
   "peerDependencies": {
-    "react": ">=19",
-    "react-dom": ">=19"
-  },
-  "dependencies": {
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "eslint": "^9.39.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
+    "publint": "^0.3.25",
     "tailwindcss": "^4.3.3",
-    "vite": "^8.3.4"
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4",
+    "react": ">=19",
+    "react-dom": ">=19"
   }
 }

@@ -1,14 +1,32 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
+dist-lib
 dist-ssr
-*.local
+*.tsbuildinfo
+
+# Environment files (keep the example)
 .env
 .env.*
 !.env.example
+
+# Package artifacts
+*.tgz
+
+# Logs, caches, coverage
+*.log
 npm-debug.log*
+.eslintcache
+coverage
+.cache
+.vite
+
+# Local artifacts and editor/OS files
+*.local
 .DS_Store
+Thumbs.db
+.idea
 .vscode/*
 !.vscode/extensions.json
-.idea
-coverage
-dist-lib

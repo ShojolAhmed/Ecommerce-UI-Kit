@@ -1,0 +1,11 @@
+LICENSE PLACEHOLDER: THE OWNER MUST CHOOSE A LICENSE BEFORE PUBLISHING.
+
+This file is intentionally not a real license. Until it is replaced, nobody has permission
+to use, copy, modify or distribute this code beyond what the owner grants separately.
+
+To choose one:
+  1. Pick a license (for example MIT, Apache-2.0, or a proprietary one) with legal advice if needed.
+  2. Replace the contents of this file with the full license text, including the copyright holder and year.
+  3. Set the "license" field in package.json to the matching SPDX identifier (for example "MIT"),
+     or leave "SEE LICENSE IN LICENSE" for a custom license.
+  4. Delete this notice. `npm publish` is blocked by scripts/check-license.mjs while it remains.

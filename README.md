@@ -1,38 +1,172 @@
 # Ecom UI Kit
 
-Reusable React e-commerce UI components with interchangeable design variants
-(navbars, product cards, sidebars, footers, homepage sections, …). Built with React, Vite, JavaScript and Tailwind CSS.
+React e-commerce UI components with interchangeable design variants: navbars, product cards, sidebars and filters,
+footers, homepage sections, and cart UI. Plain JavaScript with TypeScript declarations, styled with Tailwind CSS v4
+and shipped as one compiled stylesheet.
 
-> Status: **Phase 8 – component gallery** (see "Component gallery" below). Earlier: **Phase 7 – cart and overlays.** `QuantitySelector`, `CartItemRow`, `CartSummary`, `EmptyCartState`, `CartDrawer`, `ConfirmDialog`, toasts, `Tabs` and a reusable `Accordion` (see "Cart and overlays" below). Earlier: **Phase 6 – footers and homepage sections.** Four `Footer` variants and eight independent homepage sections (see below), on top of the phase 5 components. Earlier: **Phase 5 – product discovery.** Design tokens, light/dark themes, six primitives (Button, IconButton, Badge, Input, Container, Spinner), the `Navbar` family (four variants), the `ProductCard` family (five variants) with a reusable `ProductGrid`, and the discovery components: `Sidebar` (three variants), `FilterDrawer`, `SearchInput`, `SortDropdown`, `Breadcrumbs` and `ActiveFilters`.
+> **Distribution status:** the package builds, packs and passes the checks below, but it has **not been published to
+> npm**. Until the owner publishes it, install it from a tarball or a local path (see Installation). A license has not been
+> chosen yet: see [Releasing](#packaging-and-releasing).
 
-## Getting started
+## Installation
+
+Requirements: React and React DOM **19** (peer dependencies, never bundled), and a bundler that handles ES modules and
+CSS imports (tested with Vite 8; webpack, Next.js and others are untested). The package is **ESM only**.
+
+```bash
+# Once published (not yet):
+npm install ecom-ui-kit react react-dom
+
+# Today, from a checkout of this repository:
+npm pack                                   # builds dist-lib and writes ecom-ui-kit-0.1.0.tgz
+npm install ./ecom-ui-kit-0.1.0.tgz        # in your app
+```
+
+You do not need Tailwind in your app: the kit ships its compiled CSS.
+
+## Quick start
+
+```jsx
+// main.jsx: import the kit's styles once
+import 'ecom-ui-kit/styles.css'
+```
+
+```jsx
+import { useState } from 'react'
+import { Navbar, ProductGrid } from 'ecom-ui-kit'
+
+const products = [{ id: 1, name: 'Merino Crewneck Sweater', price: 89, originalPrice: 120, image: '/sweater.jpg' }]
+
+export default function Shop() {
+  // Your page owns the state; the kit renders it and reports changes through callbacks.
+  const [cart, setCart] = useState(0)
+  const [wishlist, setWishlist] = useState([])
+  return (
+    <>
+      <Navbar variant="mega" brand={{ name: 'Northwind' }} cart={{ count: cart }} />
+      <ProductGrid
+        variant="minimal"
+        products={products}
+        wishlistedIds={wishlist}
+        onAddToCart={() => setCart((n) => n + 1)}
+        onToggleWishlist={(p) => setWishlist((ids) => (ids.includes(p.id) ? ids.filter((id) => id !== p.id) : [...ids, p.id]))}
+      />
+    </>
+  )
+}
+```
+
+## Imports
+
+Everything public comes from the package root; the `exports` map blocks deep imports into `dist-lib/`.
+
+```jsx
+import 'ecom-ui-kit/styles.css'                                  // compiled styles (required, once)
+import { Navbar, ProductCard, CartDrawer, Button } from 'ecom-ui-kit'   // components, primitives, hooks, pure helpers
+import { LuxuryProductCard, MegaMenuNavbar } from 'ecom-ui-kit'  // one design, no `variant` prop
+import { productCardVariants, getCartTotals } from 'ecom-ui-kit' // registries and helpers
+import type { Product, NavbarLink, CartItem } from 'ecom-ui-kit' // data types (TypeScript)
+```
+
+Unused components tree-shake away (a bundle that imports only `Button` adds about 6 kB; measured by `npm run test:consumer`).
+`Navbar`, `ProductCard`, `Sidebar` and `Footer` include all of their designs; import a single design (for example
+`MegaMenuNavbar`) to avoid that. See [Choosing a variant](#choosing-a-variant) for names and fallback rules.
+
+## TypeScript
+
+Declarations are generated from the existing JSDoc (no source rewrite) into `dist-lib/types` and wired through the `types`
+and `exports` fields. Honest scope:
+
+- Documented props have exact types (`variant` is a closed union, `product` is required, ...).
+- `Navbar`, `ProductCard`, `ProductGrid`, `Sidebar` and `Footer` are **strict**: their `types.js` is the complete contract,
+  so unknown props are errors.
+- 32 other components document only their main props in JSDoc but also pass `className`, `id`, `children`, DOM attributes and
+  similar through. Their props type is `documented props & { [key: string]: unknown }`: documented props stay exactly typed, but a
+  typo in an undocumented prop is **not** caught. Tightening this means completing the JSDoc of those components.
+- Internal helpers may be typed `any` where the JSDoc has no types.
+
+## Styling and theming
+
+- `ecom-ui-kit/styles.css` (about 57 kB, 11 kB gzipped) contains the design tokens, the light and dark themes and exactly the
+  Tailwind utilities the components use. It is organised in cascade layers, so your own unlayered CSS overrides it.
+- It includes **Tailwind's preflight reset**, which the components rely on (for example default border styles). Expect it to
+  reset element defaults on your page. Using the kit next to your own Tailwind v4 setup is untested.
+- Theme: follows the OS by default; force it with `<html data-theme="light|dark">`, or set `data-theme` on any subtree.
+- The stylesheet styles the kit, not your page: use your own CSS for your layout. See "Design tokens & theming" below.
+
+## Examples
+
+- [`examples/consumer-app`](examples/consumer-app): a small separate Vite + React app (JavaScript) using the kit through its
+  public entry point. `cd examples/consumer-app && npm install && npm run dev` (it builds the library first).
+- [`scripts/fixtures/consumer`](scripts/fixtures/consumer): the TypeScript app used by `npm run test:consumer`, including
+  `@ts-expect-error` cases that prove which mistakes are caught.
+- The [component gallery](#component-gallery) (`npm run dev`, then `#/gallery`) previews every variant with usage code.
+
+## Development commands
 
 ```bash
 npm install
-npm run dev      # preview page at http://localhost:5173
-npm run lint     # ESLint
-npm run build    # production build of the preview app
+npm run dev            # preview app + component gallery at http://localhost:5173 (gallery: #/gallery)
+npm run lint           # ESLint
+npm run build          # production build of the preview app (not the library)
+npm run build:lib      # the package: dist-lib/ecom-ui-kit.js, styles.css, types/
+npm run docs:api       # regenerate docs/API.md from the JSDoc
+npm run test:api       # build:lib + check exports, variant selection, fallbacks and warnings
+npm run test:consumer  # pack, install into a fresh TypeScript + Vite app, type-check, build, measure tree-shaking
+npm run check:package  # build:lib + publint
 ```
+
+Node 20.19+ or 22.12+ is needed for the toolchain; the package itself has no Node requirement. `test:consumer` needs network
+access to install from the npm registry.
+
+## Packaging and releasing
+
+**What ships** (`files` in package.json): `dist-lib/` (ES module, stylesheet, declarations), `docs/API.md`, `README.md`
+and `LICENSE`. 163 files, about 122 kB packed. The gallery, the preview app, sample data, source and scripts are **not** included;
+`test:consumer` fails if any of them appear. The gallery stays a development application in this repository.
+
+**Build:** `vite.lib.config.js` builds `src/library/entry.js` (the public API plus the compiled CSS) as one ES module with React,
+React DOM and `react/jsx-runtime` external. `scripts/build-types.mjs` emits the declarations. Development warnings (unknown
+variants) are kept behind `process.env.NODE_ENV`, so production builds of your app drop them.
+
+**Before the first publish, the owner must:**
+
+1. **Choose a license.** `LICENSE` is a placeholder and `npm publish` refuses to run while it says so
+   (`scripts/check-license.mjs`). Replace it with the real text and update the `license` field.
+2. **Confirm the package name.** `ecom-ui-kit` looked unregistered on npm when checked, but names can be taken at any time; use
+   a scope (`@your-org/ecom-ui-kit`) if you prefer.
+3. **Add** `repository`, `homepage`, `bugs` and `author` to package.json (left out because they are not known).
+4. Bump `version`, then run `npm publish` (it runs lint, `test:api` and `check:package` first via `prepublishOnly`).
+   Use `npm publish --dry-run` to preview. Nothing has been published.
+
+**Known limitations**
+
+- ESM only; no CommonJS build. Tested with Vite only; other bundlers and SSR frameworks are untested (the code guards
+  `document` for server rendering in portals, but this was not exercised in a framework).
+- No per-component CSS or subpath imports: one stylesheet for everything.
+- Types are best-effort (see TypeScript above). Some components are typed with undocumented props passed through.
+- The preflight reset ships inside `styles.css`.
+- Requires React 19 (uses `ref` as a prop).
 
 ## Structure
 
 ```
 src/
-  library/               # the future npm package – public API only
-    styles/              # theme.css (tokens + light/dark), base.css, index.css
+  library/               # the npm package: public API only (nothing here may import preview/ or gallery/)
+    styles/              # theme.css (tokens + light/dark), base.css, index.css, bundle.css (for the package)
     primitives/<Name>/   # Button, IconButton, Badge, Input, Container, Spinner
-      <Name>.jsx         # component
-      <name>Styles.js    # class maps (kept out of the component file for fast refresh)
     components/<Family>/
       <Family>.jsx       # picks a variant via the `variant` prop
       variants/          # one file per design + index.js registry
-    hooks/               # useDialogBehavior (focus trap, Escape, scroll lock, dialog stack), useControllableState
-    icons/               # built-in icons
-    utils/               # cn, discovery.js (pure filter helpers), cart.js (pure cart helpers)
-    index.js             # public exports
-  preview/               # dev-only preview app (not packaged)
-  App.jsx, main.jsx, index.css
+    hooks/  icons/  utils/
+    index.js             # public exports (style-free)
+    entry.js             # package build entry: index.js + compiled CSS
+  gallery/               # development-only component gallery (not packaged)
+  preview/               # development-only preview app (not packaged)
+scripts/                 # build-types, API docs, package and consumer checks
+examples/consumer-app/   # separate app using the package
 ```
+
 
 ## Adding a component or variant
 
@@ -47,18 +181,8 @@ Anything in `src/library` must not import from `src/preview` or `src/gallery`.
 
 ## Using the library in your app
 
-The public entry point is the package root. It is built with `npm run build:lib` (also run by `npm pack`) into `dist-lib/`:
-
-```jsx
-import 'ecom-ui-kit/styles.css'            // once, e.g. in main.jsx: compiled styles, no Tailwind setup needed
-import { Navbar, ProductCard, LuxuryProductCard } from 'ecom-ui-kit'
-```
-
-- `react` and `react-dom` (19+) are peer dependencies. ES modules only; named exports only; unused components tree-shake away.
-- `styles.css` includes Tailwind's preflight reset, which the components rely on. It styles the kit, not your page: use your own CSS (or
-  your own Tailwind) for your layout.
-- Everything exported from `src/library/index.js` is public API. Anything else (`shared/`, `utils/` internals, `dist-lib` file names) is not.
-- A complete separate app lives in [`examples/consumer-app`](examples/consumer-app): `cd examples/consumer-app && npm install && npm run dev`.
+See [Installation](#installation), [Quick start](#quick-start) and [Imports](#imports) above. Everything exported from
+`src/library/index.js` is public API; `shared/`, internal `utils/` and the `dist-lib` file names are not.
 
 ### Choosing a variant
 
@@ -111,12 +235,6 @@ the JSDoc by `npm run docs:api`. In short:
 
 Controlled values (`isWishlisted`, `wishlistedIds`, `activeCategory`, `filters`, ...) come from your state.
 
-## Verifying the public API
-
-`npm run test:api` builds the package and checks it from a consumer's side: exports, every variant through the selector vs. its
-direct import, fallbacks and warnings, aliases, and the card families that forward a variant. The consumer example is the
-integration test for installing and styling.
-
 ## Design tokens & theming
 
 All tokens live in `src/library/styles/theme.css` and become Tailwind utilities:
@@ -138,12 +256,6 @@ The `dark:` variant follows `data-theme="dark"` only.
 
 **States.** Primitives share one focus style (`outline-ring`, keyboard only) and use the custom
 `actionable:` variant so hover/active styles never apply to disabled or loading controls.
-
-## Styling note
-
-Components use Tailwind utility classes. Tailwind v4 must scan the library's source;
-`src/index.css` does this with `@source "./library"` and imports `library/styles/index.css` for the tokens.
-Consumers will need an equivalent `@source` line plus that stylesheet import.
 
 ## Navbar
 
@@ -929,4 +1041,4 @@ it already sets. Wrap it instead (as `WishlistButton` does for positioning), or 
 
 ## Roadmap
 
-Library build mode and npm publishing. Not included yet.
+Not included yet: publishing to npm (owner decisions pending), CommonJS output, per-component CSS, complete JSDoc for strict types everywhere.

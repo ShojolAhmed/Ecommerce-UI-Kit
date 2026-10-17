@@ -41,8 +41,8 @@ for (const family of families) {
   const main = defs.get(family.props)
   const defaultName = registryOf(family.dir === 'ProductGrid' ? 'ProductCard' : family.dir).match(/DEFAULT_\w+ = '(\w+)'/)?.[1]
   const registrySource = registryOf(family.dir === 'ProductGrid' ? 'ProductCard' : family.dir)
-  const names = [...registrySource.match(/Map = \{([\s\S]*?)\n\}/)[1].matchAll(/^\s*(\w+):/gm)].map((match) => match[1])
-  const aliasNames = [...(registrySource.match(/aliases: \{([^}]*)\}/)?.[1] ?? '').matchAll(/(\w+):/g)].map((match) => match[1])
+  const names = [...registrySource.match(/export const \w+Variants = \{([\s\S]*?)\n\}/)[1].matchAll(/^\s*(\w+):/gm)].map((match) => match[1])
+  const aliasNames = [...(registrySource.match(/VariantAliases = \{([^}]*)\}/)?.[1] ?? '').matchAll(/(\w+):/g)].map((match) => match[1])
   const variantProp = {
     name: 'variant',
     optional: true,

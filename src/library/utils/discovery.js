@@ -96,6 +96,9 @@ export function formatFilterRange(group, value, rangeLabels) {
  * One chip per selected option (checkbox / radio) and one per range.
  * Selected values that match no option are ignored, so stale state never shows a nameless chip.
  *
+ * @param {any[]} [groups]
+ * @param {Record<string, any>} [filters]
+ * @param {{ rangeLabels?: { from?: (amount: string) => string, upTo?: (amount: string) => string } }} [options]
  * @returns {{ id: string, groupId: string, groupLabel: string, type: string, optionValue?: any, label: string }[]}
  */
 export function getActiveFilterChips(groups = [], filters = {}, { rangeLabels } = {}) {

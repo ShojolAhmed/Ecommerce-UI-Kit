@@ -6,7 +6,8 @@ import OverlayProductCard from './OverlayProductCard.jsx'
 import HorizontalProductCard from './HorizontalProductCard.jsx'
 import LuxuryProductCard from './LuxuryProductCard.jsx'
 
-const productCardVariantsMap = {
+/** Canonical variant names and their components (a plain object, so unused designs can be tree-shaken). */
+export const productCardVariants = {
   minimal: MinimalProductCard,
   sale: SaleProductCard,
   overlay: OverlayProductCard,
@@ -17,17 +18,14 @@ const productCardVariantsMap = {
 export const DEFAULT_PRODUCT_CARD_VARIANT = 'minimal'
 
 /**
- * The ProductCard registry: `resolve(variant)` returns the component to render and falls back to the
+ * The ProductCard registry (pure, so it is dropped when nothing uses it): `resolve(variant)` returns the component to render and falls back to the
  * default (with a development warning) for an unknown name. Used by `<ProductCard variant>`.
  */
-export const productCardRegistry = createVariantRegistry({
+export const productCardRegistry = /* @__PURE__ */ createVariantRegistry({
   name: 'ProductCard',
-  variants: productCardVariantsMap,
+  variants: productCardVariants,
   defaultVariant: DEFAULT_PRODUCT_CARD_VARIANT,
 })
-
-/** Canonical variant names and their components. */
-export const productCardVariants = productCardRegistry.variants
 
 // Each design is also importable on its own.
 export { MinimalProductCard, SaleProductCard, OverlayProductCard, HorizontalProductCard, LuxuryProductCard }
