@@ -1,0 +1,25 @@
+{
+  "name": "storefront",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Frontend-only storefront built on ecom-ui-kit (public entry point, same pattern as examples/consumer-app).",
+  "scripts": {
+    "predev": "npm --prefix ../.. run build:lib",
+    "dev": "vite",
+    "prebuild": "npm --prefix ../.. run build:lib",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "ecom-ui-kit": "file:../..",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.4"
+  }
+}
